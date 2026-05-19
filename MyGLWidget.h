@@ -4,71 +4,128 @@
 #include "model.h"
 #include "BL2GLWidget.h"
 
+#include <QTimer>
+#include <vector>
+
 class MyGLWidget : public BL2GLWidget {
   Q_OBJECT
 
-  public:
+public:
     MyGLWidget(QWidget *parent=0) : BL2GLWidget(parent) {}
     ~MyGLWidget();
 
-  protected:
-    // Inicialización del contexto OpenGL
+protected:
+
     void initializeGL() override;
-
-    // Pintado de la escena
     void paintGL() override;
-
-    // Transformación por celda del laberinto
-    void modelTransformCell(int fila, int col);
-    void modelTransformCellT(int fila, int col);
-
-    // Inicialización de cámara y matrices
-    void initCamera();
+    void resizeGL(int w, int h) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
     void carregaShaders() override;
 
-    // Uniform locations
+    // ==================== CAMERA ====================
+
+    void initCamera();
+    void calculaEscena();
+
     GLuint PMLoc, VMLoc, TG_Loc;
 
-    // Matrices
     glm::mat4 PM;
     glm::mat4 VM;
     glm::mat4 TG;
 
-    // Dimensiones del laberinto
-    static const int N = 10; //filas
-    static const int M = 15; //columnas
+    float FOV;
+    float ra;
 
-    // Matriz del laberinto
+    glm::vec3 centreEscena;
+    float radiEscena;
+
+    // ==================== MAZE ====================
+
+    static const int N = 10;
+    static const int M = 15;
+
     int laberint[N][M] = {
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1},
       {1,0,0,0,3,0,0,0,0,0,0,0,0,0,1},
       {1,1,1,1,0,1,1,1,0,1,1,1,1,0,1},
-      {1,0,0,3,0,0,0,1,0,0,0,1,0,0,4},
+      {1,0,0,0,0,0,0,1,0,0,0,1,0,0,4},
       {1,1,1,0,1,1,0,1,1,1,0,1,1,0,1},
-      {1,0,0,3,0,1,0,0,0,1,0,0,0,3,1},
+      {1,0,0,0,0,1,0,0,0,1,0,0,0,0,1},
       {1,1,1,1,0,1,1,1,0,1,1,1,1,0,1},
       {4,0,1,0,0,0,1,0,0,0,0,1,0,0,1},
       {1,0,0,0,1,0,1,0,0,1,0,0,0,2,1},
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1}
     };
 
-    Model morty, torre, moneda;
-    GLuint VAO_Morty, VAO_Torre, VAO_Moneda;
+    // ==================== MODELS ====================
 
-    void creaBuffersMorty ();
+    struct InfoModel {
+        float escala;
+        glm::vec3 centreBase;
+        float alcada;
+    };
 
-    void creaBuffersTorre ();
+    Model morty;
+    Model fantasma;
+    Model moneda;
+    Model torre;
 
-    void creaBuffersMoneda ();
+    InfoModel infoMorty;
+    InfoModel infoFantasma;
+    InfoModel infoMoneda;
+    InfoModel infoTorre;
 
-    void modelTransformMorty (int fila, int col);
+    GLuint VAO_Morty;
+    GLuint VAO_Fantasma;
+    GLuint VAO_Moneda;
+    GLuint VAO_Torre;
 
-    void modelTransformTorre (int fila, int col);
+    void creaBuffersMorty();
+    void creaBuffersFantasma();
+    void creaBuffersMoneda();
+    void creaBuffersTorre();
 
-    void modelTransformMoneda (int fila, int col);
+    void calculaCapsaModel(Model &m, InfoModel &info, float alcadaDesitjada);
 
-    
+    // ==================== TRANSFORMS ====================
+
+    void modelTransformCell(int fila, int col);
+    void modelTransformCellT(int fila, int col);
+    void modelTransformMorty(int fila, int col);
+    void modelTransformFantasma(int fila, int col);
+    void modelTransformMoneda(int fila, int col);
+    void modelTransformTorre(int fila, int col);
+
+    // ==================== PLAYER ====================
+
+    int playerRow;
+    int playerCol;
+
+    int ghostRow;
+    int ghostCol;
+
+    int dir = 0;
+
+    // ==================== COINS ====================
+
+    struct Coin {
+        int fila;
+        int col;
+        bool activa;
+    };
+
+    std::vector<Coin> coins;
+
+    void generaMonedes();
+
+    float angleCoins = 0.0f;
+
+    QTimer timer;
+
+public slots:
+
+    void rotateCoins();
 };
 
 #endif
