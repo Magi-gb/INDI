@@ -25,6 +25,12 @@ class MyGLWidget : public BL2GLWidget {
     // Inicialización de cámara y matrices
     void initCamera();
 
+    void projectTransform();
+
+    void viewTransform();
+
+    void keyPressEvent(QKeyEvent *event);
+
     void carregaShaders() override;
 
     // Uniform locations
@@ -45,10 +51,10 @@ class MyGLWidget : public BL2GLWidget {
       {1,0,0,0,3,0,0,0,0,0,0,0,0,0,1},
       {1,1,1,1,0,1,1,1,0,1,1,1,1,0,1},
       {1,0,0,3,0,0,0,1,0,0,0,1,0,0,4},
-      {1,1,1,0,1,1,0,1,1,1,0,1,1,0,1},
-      {1,0,0,3,0,1,0,0,0,1,0,0,0,3,1},
-      {1,1,1,1,0,1,1,1,0,1,1,1,1,0,1},
-      {4,0,1,0,0,0,1,0,0,0,0,1,0,0,1},
+      {1,1,1,0,1,1,0,1,1,1,0,1,0,0,1},
+      {1,0,0,3,0,1,0,0,0,1,0,1,1,3,1},
+      {1,1,1,1,0,1,1,0,0,1,0,1,0,0,1},
+      {4,0,1,0,0,0,1,1,0,1,0,1,1,0,1},
       {1,0,0,0,1,0,1,0,0,1,0,0,0,2,1},
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1}
     };
@@ -68,6 +74,30 @@ class MyGLWidget : public BL2GLWidget {
 
     void modelTransformMoneda (int fila, int col);
 
+    void resizeGL(int w, int h) override;
+
+    void moveMorty(int df, int dc);
+
+    //Todo esto esta en prueba
+
+        // ---------- CAMARAS ----------
+    bool cameraFPS = false;
+
+    glm::vec3 obsPerspectiva;
+    glm::vec3 vrpPerspectiva;
+
+    glm::vec3 obsFPS;
+    glm::vec3 vrpFPS;
+
+    float fovPerspectiva;
+    float fovFPS;
+
+    // Posicion de Morty
+    int mortyFila = 8;
+    int mortyCol = 13;
+
+    // Direccion de Morty
+    float angleMorty = -90.0f;
     
 };
 
