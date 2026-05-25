@@ -127,7 +127,7 @@ void MyGLWidget::projectTransform() {
 
     if (cameraFPS) {
 
-        PM = glm::perspective(fovFPS, ra, 0.1f, 200.0f);
+        PM = glm::perspective(fovFPS, ra, 0.2f, 200.0f);
     }
 
     else {
