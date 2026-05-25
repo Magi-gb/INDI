@@ -78,6 +78,25 @@ class MyGLWidget : public BL2GLWidget {
 
     void moveMorty(int df, int dc);
 
+    //Escalas models
+    void calculaCapsaModel(
+      Model &m,
+      float &escala,
+      glm::vec3 &centreBaseModel,
+      float desiredSize
+    );
+
+    void calculaCapsaEscena();
+
+  float escalaMorty;
+  glm::vec3 centreBaseMorty;
+
+  float escalaTorre;
+  glm::vec3 centreBaseTorre;
+
+  float escalaMoneda;
+  glm::vec3 centreBaseMoneda;
+
     //Moviment Morty
 
     void mouMortyEndavant();
@@ -87,6 +106,16 @@ class MyGLWidget : public BL2GLWidget {
     float angleFromDirMorty() const;
 
     //Todo esto esta en prueba
+
+    glm::vec3 minEscena;
+    glm::vec3 maxEscena;
+
+    glm::vec3 centroEscena;
+
+    float radioEscena;
+
+
+    float distCamera;
 
         // ---------- CAMARAS ----------
     bool cameraFPS = false;
