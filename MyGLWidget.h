@@ -78,6 +78,14 @@ class MyGLWidget : public BL2GLWidget {
 
     void moveMorty(int df, int dc);
 
+    //Moviment Morty
+
+    void mouMortyEndavant();
+    void mouMortyEnrere();
+    void giraMortyEsquerra();
+    void giraMortyDreta();
+    float angleFromDirMorty() const;
+
     //Todo esto esta en prueba
 
         // ---------- CAMARAS ----------
@@ -92,12 +100,19 @@ class MyGLWidget : public BL2GLWidget {
     float fovPerspectiva;
     float fovFPS;
 
+    void findMorty();
     // Posicion de Morty
-    int mortyFila = 8;
-    int mortyCol = 13;
+    int mortyFila;
+    int mortyCol;
 
     // Direccion de Morty
     float angleMorty = -90.0f;
+
+    int dirMorty = 1;
+
+    glm::vec3 direccioMiradaMorty() const;
+
+
     
 };
 
