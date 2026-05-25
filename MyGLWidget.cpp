@@ -16,6 +16,7 @@ void MyGLWidget::initializeGL() {
     torre.load("../Models3D/tower.obj");
     moneda.load("../Models3D/Coin.obj");
 
+    findMorty();
     initCamera();
     creaBuffersMorty();
     creaBuffersTorre();
@@ -95,7 +96,7 @@ void MyGLWidget::projectTransform() {
 
     float ra = float(width()) / float(height());
 
-    float near = 0.1f;
+    float near = 0.5f;
     float far = 200.0f;
 
     if (cameraFPS)
@@ -110,7 +111,7 @@ void MyGLWidget::viewTransform() {
 
     if (!cameraFPS) {
 
-        VM = glm::lookAt(obsPerspectiva, vrpPerspectiva, glm::vec3(0,1,0));
+        VM = glm::lookAt(obsPerspectiva, vrpPerspectiva, glm::vec3(0, 1, 0));
     }
 
     else {
@@ -118,20 +119,44 @@ void MyGLWidget::viewTransform() {
         // Posicion de la cabeza de Morty
         obsFPS = glm::vec3(mortyCol + 0.5f, 0.5f, mortyFila + 0.5f);
 
-        // Direccion hacia delante
-        glm::vec3 dir(cos(glm::radians(angleMorty)), 0.0f, sin(glm::radians(angleMorty)));
+        // Direccion hacia donde mira Morty segun dirMorty
+        glm::vec3 dir;
 
+        switch (dirMorty) {
+            case 0:
+                dir = glm::vec3(0.0f, 0.0f, -1.0f); // Norte
+                break;
+
+            case 1:
+                dir = glm::vec3(1.0f, 0.0f, 0.0f);  // Este
+                break;
+
+            case 2:
+                dir = glm::vec3(0.0f, 0.0f, 1.0f);  // Sur
+                break;
+
+            case 3:
+                dir = glm::vec3(-1.0f, 0.0f, 0.0f); // Oeste
+                break;
+
+            default:
+                dir = glm::vec3(1.0f, 0.0f, 0.0f);
+                break;
+        }
         vrpFPS = obsFPS + dir;
 
-        VM = glm::lookAt(obsFPS, vrpFPS, glm::vec3(0,1,0));
+        VM = glm::lookAt(obsFPS, vrpFPS, glm::vec3(0, 1, 0));
     }
 
     glUniformMatrix4fv(VMLoc, 1, GL_FALSE, &VM[0][0]);
 }
 
+
 void MyGLWidget::keyPressEvent(QKeyEvent *event) {
 
     makeCurrent();
+
+    bool calActualitzar = true;
 
     switch(event->key()) {
 
@@ -140,41 +165,56 @@ void MyGLWidget::keyPressEvent(QKeyEvent *event) {
 
             projectTransform();
             viewTransform();
-
-            update();
             break;
 
         case Qt::Key_W:
         case Qt::Key_Up:
-            angleMorty = 180.0f;
-            moveMorty(-1, 0);
-            update();
+            mouMortyEndavant();
             break;
 
         case Qt::Key_S:
         case Qt::Key_Down:
-            angleMorty = 0.0f;
-            moveMorty(1, 0);
-            update();
+            mouMortyEnrere();
             break;
 
         case Qt::Key_A:
         case Qt::Key_Left:
-            angleMorty = 90.0f;
-            moveMorty(0, -1);
-            update();
+            giraMortyEsquerra();
             break;
 
         case Qt::Key_D:
         case Qt::Key_Right:
-            angleMorty = -90.0f;
-            moveMorty(0, 1);
-            update();
+            giraMortyDreta();
             break;
 
         default:
+            calActualitzar = false;
             BL2GLWidget::keyPressEvent(event);
             break;
+    }
+
+    if (calActualitzar) {
+        if (cameraFPS) {
+            viewTransform();
+        }
+        update();
+    }
+}
+
+void MyGLWidget::findMorty() {
+
+    for (int i = 0; i < N; i++) {
+
+        for (int j = 0; j < M; j++) {
+
+            if (laberint[i][j] == 2) {
+
+                mortyFila = i;
+                mortyCol = j;
+
+                return;
+            }
+        }
     }
 }
 
@@ -211,6 +251,93 @@ void MyGLWidget::moveMorty(int df, int dc) {
     mortyCol = novaCol;
 }
 
+void MyGLWidget::mouMortyEndavant() {
+
+    switch (dirMorty) {
+        case 0:
+            moveMorty(-1, 0);
+            break;
+
+        case 1:
+            moveMorty(0, 1);
+            break;
+
+        case 2:
+            moveMorty(1, 0);
+            break;
+
+        case 3:
+            moveMorty(0, -1);
+            break;
+    }
+}
+
+void MyGLWidget::mouMortyEnrere() {
+
+    switch (dirMorty) {
+        case 0:
+            moveMorty(1, 0);
+            break;
+
+        case 1:
+            moveMorty(0, -1);
+            break;
+
+        case 2:
+            moveMorty(-1, 0);
+            break;
+
+        case 3:
+            moveMorty(0, 1);
+            break;
+    }
+}
+
+void MyGLWidget::giraMortyEsquerra() {
+    dirMorty = (dirMorty + 3) % 4;
+}
+
+void MyGLWidget::giraMortyDreta() {
+    dirMorty = (dirMorty + 1) % 4;
+}
+
+float MyGLWidget::angleFromDirMorty() const {
+
+    switch (dirMorty) {
+        case 0:
+            return 180.0f;   // Norte
+
+        case 1:
+            return 90.0f;   // Este
+
+        case 2:
+            return 0.0f;     // Sur
+
+        case 3:
+            return -90.0f;    // Oeste;
+    }
+
+    return -90.0f;
+}
+
+glm::vec3 MyGLWidget::direccioMiradaMorty() const {
+
+    switch (dirMorty) {
+        case 0:
+            return glm::vec3(0.0f, 0.0f, -1.0f); // Norte, fila -1
+
+        case 1:
+            return glm::vec3(1.0f, 0.0f, 0.0f);  // Este, col +1
+
+        case 2:
+            return glm::vec3(0.0f, 0.0f, 1.0f);  // Sur, fila +1
+
+        case 3:
+            return glm::vec3(-1.0f, 0.0f, 0.0f); // Oeste, col -1
+    }
+
+    return glm::vec3(1.0f, 0.0f, 0.0f);
+}
 
 void MyGLWidget::modelTransformCell(int fila, int col) {
     glm::mat4 TG(1.0f);
@@ -296,7 +423,7 @@ void MyGLWidget::modelTransformMorty(int fila, int col) {
 
     TG = glm::translate(TG, glm::vec3(0.5, 0, 0.5));
 
-    TG = glm::rotate(TG, glm::radians(angleMorty), glm::vec3(0, 1, 0));
+    TG = glm::rotate(TG, glm::radians(angleFromDirMorty()), glm::vec3(0, 1, 0));
 
     float escala = 1.5f / 312.3f;
     TG = glm::scale(TG, glm::vec3(escala));
