@@ -17,10 +17,32 @@ void MyGLWidget::initializeGL() {
     moneda.load("../Models3D/Coin.obj");
 
     findMorty();
+    calculaCapsaEscena();
     initCamera();
     creaBuffersMorty();
     creaBuffersTorre();
     creaBuffersMoneda();
+
+    calculaCapsaModel(
+        morty,
+        escalaMorty,
+        centreBaseMorty,
+        1.5f
+    );
+
+    calculaCapsaModel(
+        torre,
+        escalaTorre,
+        centreBaseTorre,
+        6.0f
+    );
+
+    calculaCapsaModel(
+        moneda,
+        escalaMoneda,
+        centreBaseMoneda,
+        0.5f
+    );
 
     glEnable(GL_DEPTH_TEST);
 }
@@ -79,13 +101,18 @@ void MyGLWidget::carregaShaders() {
 
 void MyGLWidget::initCamera() {
 
-    // ---------- CAMARA GENERAL ----------
-    obsPerspectiva = glm::vec3(30.0f, 30.0f, 30.0f);
-    vrpPerspectiva = glm::vec3(M/2.0f, 0.0f, N/2.0f);
-
     fovPerspectiva = glm::radians(60.0f);
 
-    // ---------- CAMARA FPS ----------
+    distCamera = radioEscena / sin(fovPerspectiva / 2.0f);
+
+    glm::vec3 dirCamera(0.0f, 1.0f, 1.0f);
+
+    dirCamera = glm::normalize(dirCamera);
+
+    obsPerspectiva = centroEscena + dirCamera * distCamera;
+
+    vrpPerspectiva = centroEscena;
+
     fovFPS = glm::radians(90.0f);
 
     projectTransform();
@@ -96,13 +123,23 @@ void MyGLWidget::projectTransform() {
 
     float ra = float(width()) / float(height());
 
-    float near = 0.5f;
-    float far = 200.0f;
+    float near, far;
 
-    if (cameraFPS)
-        PM = glm::perspective(fovFPS, ra, near, far);
-    else
-        PM = glm::perspective(fovPerspectiva, ra, near, far);
+    if (cameraFPS) {
+
+        PM = glm::perspective(fovFPS, ra, 0.1f, 200.0f);
+    }
+
+    else {
+
+        near = distCamera - radioEscena;
+
+        if (near < 0.1f) near = 0.1f;
+
+        far = distCamera + radioEscena;
+
+        PM = glm::perspective( fovPerspectiva, ra, near, far);
+    }
 
     glUniformMatrix4fv(PMLoc, 1, GL_FALSE, &PM[0][0]);
 }
@@ -305,16 +342,16 @@ float MyGLWidget::angleFromDirMorty() const {
 
     switch (dirMorty) {
         case 0:
-            return 180.0f;   // Norte
+            return 180.0f;      // Norte
 
         case 1:
-            return 90.0f;   // Este
+            return 90.0f;       // Este
 
         case 2:
-            return 0.0f;     // Sur
+            return 0.0f;        // Sur
 
         case 3:
-            return -90.0f;    // Oeste;
+            return -90.0f;      // Oeste;
     }
 
     return -90.0f;
@@ -337,6 +374,76 @@ glm::vec3 MyGLWidget::direccioMiradaMorty() const {
     }
 
     return glm::vec3(1.0f, 0.0f, 0.0f);
+}
+
+//Operació per l'escala dels models
+void MyGLWidget::calculaCapsaModel(
+    Model &m,
+    float &escala,
+    glm::vec3 &centreBaseModel,
+    float desiredSize
+) {
+
+    float minx, miny, minz;
+    float maxx, maxy, maxz;
+
+    minx = maxx = m.vertices()[0];
+    miny = maxy = m.vertices()[1];
+    minz = maxz = m.vertices()[2];
+
+    for (unsigned int i = 3; i < m.vertices().size(); i += 3) {
+
+        float x = m.vertices()[i];
+        float y = m.vertices()[i+1];
+        float z = m.vertices()[i+2];
+
+        minx = std::min(minx, x);
+        maxx = std::max(maxx, x);
+
+        miny = std::min(miny, y);
+        maxy = std::max(maxy, y);
+
+        minz = std::min(minz, z);
+        maxz = std::max(maxz, z);
+    }
+
+    // Tamaño máximo del modelo
+    float sizeX = maxx - minx;
+    float sizeY = maxy - miny;
+    float sizeZ = maxz - minz;
+
+    float maxSize = std::max(sizeX,
+                    std::max(sizeY, sizeZ));
+
+    escala = desiredSize / maxSize;
+
+    // Centro de la base
+    centreBaseModel = glm::vec3(
+        (minx + maxx) / 2.0f,
+        miny,
+        (minz + maxz) / 2.0f
+    );
+}
+
+void MyGLWidget::calculaCapsaEscena() {
+
+    float marge = 3.0f;
+
+    minEscena = glm::vec3(
+        -marge,
+        0.0f,
+        -marge
+    );
+
+    maxEscena = glm::vec3(
+        M + marge,
+        6.0f,
+        N + marge
+    );
+
+    centroEscena = (minEscena + maxEscena) / 2.0f;
+
+    radioEscena = glm::distance(maxEscena, centroEscena);
 }
 
 void MyGLWidget::modelTransformCell(int fila, int col) {
@@ -425,10 +532,9 @@ void MyGLWidget::modelTransformMorty(int fila, int col) {
 
     TG = glm::rotate(TG, glm::radians(angleFromDirMorty()), glm::vec3(0, 1, 0));
 
-    float escala = 1.5f / 312.3f;
-    TG = glm::scale(TG, glm::vec3(escala));
+    TG = glm::scale(TG, glm::vec3(escalaMorty));
 
-    TG = glm::translate(TG, glm::vec3(-100.0f, 213.0f, 6.0f)); //El posem al (0,0)
+    TG = glm::translate(TG, -centreBaseMorty);
 
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }
@@ -438,10 +544,11 @@ void MyGLWidget::modelTransformMoneda(int fila, int col) {
 
     TG = glm::translate(TG, glm::vec3(col, 0.0f, fila));
 
-    float escala = 0.5f / 11.0f;
-    TG = glm::scale(TG, glm::vec3(escala));
+    TG = glm::translate(TG, glm::vec3(0.5, 0, 0.5));
 
-    TG = glm::translate(TG, glm::vec3(0.0f, -5.5f, -0.25f));
+    TG = glm::scale(TG, glm::vec3(escalaMoneda));
+
+    TG = glm::translate(TG, -centreBaseMoneda);
 
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }
@@ -461,10 +568,9 @@ void MyGLWidget::modelTransformTorre(int fila, int col) {
     }
     TG = glm::translate(TG, glm::vec3(0.0f, 0.0f, -2.5f));
 
-    float escala = 6.0f / 172.0f;
-    TG = glm::scale(TG, glm::vec3(escala));
+    TG = glm::scale(TG, glm::vec3(escalaTorre));
 
-    TG = glm::translate(TG, glm::vec3(-2, 0, -2));
+    TG = glm::translate(TG, -centreBaseTorre);
 
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }
