@@ -74,14 +74,16 @@ void MyGLWidget::paintGL() {
                     glBindVertexArray(VAO_Morty);
                     modelTransformMorty(i, j);
                     glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
-                } else if (laberint[i][j] == 3) {      // Cambiar el numero de asignacion de la moneda a 5 o aleatorizar el spawn
-                    glBindVertexArray(VAO_Moneda);
-                    modelTransformMoneda(i, j);
-                    glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);  
+                } else if (laberint[i][j] == 3) { 
+                    //Aqui va el fantasmon
                 } else if (laberint[i][j] == 4) {
                     glBindVertexArray(VAO_Torre);
                     modelTransformTorre(i, j);
                     glDrawArrays(GL_TRIANGLES, 0, torre.faces().size() * 3);
+                } else if (laberint[i][j] == 5) {
+                    glBindVertexArray(VAO_Moneda);
+                    modelTransformMoneda(i, j);
+                    glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);
                 }
                 glBindVertexArray(VAO_Cub);
                 modelTransformCellT(i, j);
@@ -136,15 +138,25 @@ void MyGLWidget::projectTransform() {
 
     // Evitar recorte vertical
     if (ra < 1.0f) {
+
         FOV = 2.0f * atan( tan(fovPerspectiva / 2.0f) / ra);
     }
 
     if (cameraFPS) {
-        PM = glm::perspective( fovFPS, ra, 0.1f, 200.0f);
+
+        PM = glm::perspective( fovFPS, ra, 0.2f, 200.0f);
     }
 
     else {
-        PM = glm::perspective( FOV, ra, 0.1f, 4.0f * radioEscena);
+
+        float near = distCamera - radioEscena;
+        float far  = distCamera + radioEscena;
+
+        // Seguridad
+        if (near < 0.1f)
+            near = 0.1f;
+
+        PM = glm::perspective( FOV, ra, near, far);
     }
 
     glUniformMatrix4fv(PMLoc, 1, GL_FALSE, &PM[0][0]);
@@ -154,7 +166,11 @@ void MyGLWidget::viewTransform() {
 
     if (!cameraFPS) {
 
-        VM = glm::lookAt(obsPerspectiva, vrpPerspectiva, glm::vec3(0, 1, 0));
+        VM = glm::lookAt(obsPerspectiva, vrpPerspectiva, glm::vec3(0,1,0));
+
+        VM = glm::rotate(VM, angleX, glm::vec3(1,0,0));
+
+        VM = glm::rotate(VM, angleY, glm::vec3(0,1,0));
     }
 
     else {
@@ -244,6 +260,80 @@ void MyGLWidget::keyPressEvent(QKeyEvent *event) {
     }
 }
 
+void MyGLWidget::mousePressEvent(QMouseEvent *e) {
+
+    // Rotacion Euler
+    if (e->button() == Qt::LeftButton) {
+
+        rotating = true;
+
+        xClick = e->x();
+        yClick = e->y();
+    }
+
+    // Zoom
+    if (e->button() == Qt::RightButton) {
+
+        zooming = true;
+
+        yClick = e->y();
+    }
+}
+
+void MyGLWidget::mouseReleaseEvent(QMouseEvent *e) {
+
+    if (e->button() == Qt::LeftButton) {
+
+        rotating = false;
+    }
+
+    if (e->button() == Qt::RightButton) {
+
+        zooming = false;
+    }
+}
+
+void MyGLWidget::mouseMoveEvent(QMouseEvent *e) {
+
+    if (rotating && !cameraFPS) {
+
+        angleY += (e->x() - xClick) * 0.01f;
+
+        angleX += (e->y() - yClick) * 0.01f;
+
+        xClick = e->x();
+        yClick = e->y();
+
+        viewTransform();
+
+        update();
+    }
+
+    if (zooming && !cameraFPS) {
+
+    float dy = e->y() - yClick;
+
+    distCamera += dy * 0.05f;
+
+    if (distCamera < radioEscena)
+        distCamera = radioEscena;
+
+    glm::vec3 dirCamera(0.0f, 1.0f, 1.0f);
+
+    dirCamera = glm::normalize(dirCamera);
+
+    obsPerspectiva = centroEscena +
+                     dirCamera * distCamera;
+
+    yClick = e->y();
+
+    projectTransform();
+    viewTransform();
+
+    update();
+    }
+}
+
 void MyGLWidget::findMorty() {
 
     for (int i = 0; i < N; i++) {
@@ -281,7 +371,7 @@ void MyGLWidget::moveMorty(int df, int dc) {
     }
 
     // Si pisa una moneda, aquí podrías sumar puntos
-    if (laberint[novaFila][novaCol] == 3) {
+    if (laberint[novaFila][novaCol] == 5) {
         std::cout << "Moneda recogida!" << std::endl;
     }
 
@@ -435,17 +525,9 @@ void MyGLWidget::calculaCapsaEscena() {
 
     float marge = 3.0f;
 
-    minEscena = glm::vec3(
-        -marge,
-        0.0f,
-        -marge
-    );
+    minEscena = glm::vec3( -marge, 0.0f, -marge);
 
-    maxEscena = glm::vec3(
-        M + marge,
-        6.0f,
-        N + marge
-    );
+    maxEscena = glm::vec3( M + marge, 6.0f, N + marge);
 
     centroEscena = (minEscena + maxEscena) / 2.0f;
 

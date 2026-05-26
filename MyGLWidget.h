@@ -4,6 +4,7 @@
 #include "model.h"
 #include "BL2GLWidget.h"
 #include <QTimer>
+#include <QMouseEvent>
 
 class MyGLWidget : public BL2GLWidget {
   Q_OBJECT
@@ -37,6 +38,11 @@ class MyGLWidget : public BL2GLWidget {
 
     void carregaShaders() override;
 
+    //Mouse events
+    void mousePressEvent(QMouseEvent *e) override;
+    void mouseMoveEvent(QMouseEvent *e) override;
+    void mouseReleaseEvent(QMouseEvent *e) override;
+
     // Uniform locations
     GLuint PMLoc, VMLoc, TG_Loc;
 
@@ -52,13 +58,13 @@ class MyGLWidget : public BL2GLWidget {
     // Matriz del laberinto
     int laberint[N][M] = {
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1},
-      {1,0,0,0,3,0,0,0,0,0,0,0,0,0,1},
+      {1,0,0,0,5,0,0,0,0,0,0,0,0,0,1},
       {1,1,1,1,0,1,1,1,0,1,1,1,1,0,1},
-      {1,0,0,3,0,0,0,1,0,0,0,1,0,0,4},
-      {1,1,1,0,1,1,0,1,1,1,0,1,0,0,1},
-      {1,0,0,3,0,1,0,0,0,1,0,1,1,3,1},
+      {1,0,0,5,0,0,0,1,0,0,0,1,0,0,4},
+      {1,1,1,0,1,1,5,1,1,1,0,1,0,0,1},
+      {1,0,0,5,0,1,0,0,0,1,0,1,1,5,1},
       {1,1,1,1,0,1,1,0,0,1,0,1,0,0,1},
-      {4,0,1,0,0,0,1,1,0,1,0,1,1,0,1},
+      {4,0,1,0,0,0,1,1,5,1,0,1,1,0,1},
       {1,0,0,0,1,0,1,0,0,1,0,0,0,2,1},
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1}
     };
@@ -122,6 +128,19 @@ class MyGLWidget : public BL2GLWidget {
     float distCamera;
     
     // ---------- CAMARAS ----------
+        //Euler angles
+
+    float angleY = 0.0f;
+    float angleX = 0.0f;
+
+    int xClick;
+    int yClick;
+
+    bool rotating = false;
+    bool zooming = false;
+
+        //Otros
+
     bool cameraFPS = false;
 
     glm::vec3 obsPerspectiva;
@@ -133,8 +152,8 @@ class MyGLWidget : public BL2GLWidget {
     float fovPerspectiva;
     float fovFPS;
 
-    void findMorty();
     // Posicion de Morty
+    void findMorty();
     int mortyFila;
     int mortyCol;
 
