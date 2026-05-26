@@ -3,13 +3,17 @@
 
 #include "model.h"
 #include "BL2GLWidget.h"
+#include <QTimer>
 
 class MyGLWidget : public BL2GLWidget {
   Q_OBJECT
 
   public:
-    MyGLWidget(QWidget *parent=0) : BL2GLWidget(parent) {}
+    MyGLWidget(QWidget *parent=0);
     ~MyGLWidget();
+  
+  public slots:
+    void rotateCoins();
 
   protected:
     // Inicialización del contexto OpenGL
@@ -88,14 +92,19 @@ class MyGLWidget : public BL2GLWidget {
 
     void calculaCapsaEscena();
 
-  float escalaMorty;
-  glm::vec3 centreBaseMorty;
+    float escalaMorty;
+    glm::vec3 centreBaseMorty;
 
-  float escalaTorre;
-  glm::vec3 centreBaseTorre;
+    float escalaTorre;
+    glm::vec3 centreBaseTorre;
 
-  float escalaMoneda;
-  glm::vec3 centreBaseMoneda;
+    float escalaMoneda;
+    glm::vec3 centreBaseMoneda;
+
+    //Moviment Moneda
+
+    QTimer timer;
+    float angleCoin = 0.0f;
 
     //Moviment Morty
 
@@ -105,19 +114,14 @@ class MyGLWidget : public BL2GLWidget {
     void giraMortyDreta();
     float angleFromDirMorty() const;
 
-    //Todo esto esta en prueba
-
     glm::vec3 minEscena;
     glm::vec3 maxEscena;
-
     glm::vec3 centroEscena;
 
     float radioEscena;
-
-
     float distCamera;
-
-        // ---------- CAMARAS ----------
+    
+    // ---------- CAMARAS ----------
     bool cameraFPS = false;
 
     glm::vec3 obsPerspectiva;

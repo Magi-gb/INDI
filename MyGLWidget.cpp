@@ -7,6 +7,15 @@
 #define CHECK() printOglError(__FILE__, __LINE__, __FUNCTION__)
 #define DEBUG(text) std::cout << __FILE__ << " " << __LINE__ << " " << __FUNCTION__ << ":" << text << std::endl;
 
+MyGLWidget::MyGLWidget(QWidget *parent)
+    : BL2GLWidget(parent)
+{
+    connect(&timer, SIGNAL(timeout()),
+            this, SLOT(rotateCoins()));
+
+    timer.start(16);
+}
+
 MyGLWidget::~MyGLWidget() {}
 
 void MyGLWidget::initializeGL() {
@@ -123,22 +132,19 @@ void MyGLWidget::projectTransform() {
 
     float ra = float(width()) / float(height());
 
-    float near, far;
+    float FOV = fovPerspectiva;
+
+    // Evitar recorte vertical
+    if (ra < 1.0f) {
+        FOV = 2.0f * atan( tan(fovPerspectiva / 2.0f) / ra);
+    }
 
     if (cameraFPS) {
-
-        PM = glm::perspective(fovFPS, ra, 0.2f, 200.0f);
+        PM = glm::perspective( fovFPS, ra, 0.1f, 200.0f);
     }
 
     else {
-
-        near = distCamera - radioEscena;
-
-        if (near < 0.1f) near = 0.1f;
-
-        far = distCamera + radioEscena;
-
-        PM = glm::perspective( fovPerspectiva, ra, near, far);
+        PM = glm::perspective( FOV, ra, 0.1f, 4.0f * radioEscena);
     }
 
     glUniformMatrix4fv(PMLoc, 1, GL_FALSE, &PM[0][0]);
@@ -446,6 +452,16 @@ void MyGLWidget::calculaCapsaEscena() {
     radioEscena = glm::distance(maxEscena, centroEscena);
 }
 
+void MyGLWidget::rotateCoins() {
+
+    angleCoin += 2.0f;
+
+    if (angleCoin >= 360.0f)
+        angleCoin -= 360.0f;
+
+    update();
+}
+
 void MyGLWidget::modelTransformCell(int fila, int col) {
     glm::mat4 TG(1.0f);
 
@@ -540,11 +556,12 @@ void MyGLWidget::modelTransformMorty(int fila, int col) {
 }
 
 void MyGLWidget::modelTransformMoneda(int fila, int col) {
+
     glm::mat4 TG(1.0f);
 
-    TG = glm::translate(TG, glm::vec3(col, 0.0f, fila));
+    TG = glm::translate( TG, glm::vec3(col + 0.5f, 0.0f, fila + 0.5f));
 
-    TG = glm::translate(TG, glm::vec3(0.5, 0, 0.5));
+    TG = glm::rotate( TG, glm::radians(angleCoin), glm::vec3(0,1,0));
 
     TG = glm::scale(TG, glm::vec3(escalaMoneda));
 
