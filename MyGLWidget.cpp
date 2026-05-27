@@ -58,40 +58,116 @@ void MyGLWidget::initializeGL() {
 
 
 void MyGLWidget::paintGL() {
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glViewport(0, 0, width(), height());
+
+    projectTransform();
 
     viewTransform();
 
     for (int i = 0; i < N; i++) {
+
         for (int j = 0; j < M; j++) {
 
             if (laberint[i][j] == 1){
+
                 glBindVertexArray(VAO_Cub);
+
                 modelTransformCell(i, j);
+
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             } else {
+
                 if (laberint[i][j] == 2) {
+
                     glBindVertexArray(VAO_Morty);
+
                     modelTransformMorty(i, j);
+
                     glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
-                } else if (laberint[i][j] == 3) { 
-                    //Aqui va el fantasmon
+                } else if (laberint[i][j] == 3) {
+
+                    // Fantasma
                 } else if (laberint[i][j] == 4) {
+
                     glBindVertexArray(VAO_Torre);
+
                     modelTransformTorre(i, j);
+
                     glDrawArrays(GL_TRIANGLES, 0, torre.faces().size() * 3);
                 } else if (laberint[i][j] == 5) {
+
                     glBindVertexArray(VAO_Moneda);
+
                     modelTransformMoneda(i, j);
+
                     glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);
                 }
+
                 glBindVertexArray(VAO_Cub);
+
                 modelTransformCellT(i, j);
+
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }
     }
 
+    glViewport(width() - width()/4, 0, width()/4, height()/4);
+
+    projectTransformOrtho();
+
+    viewTransformOrtho();
+
+    for (int i = 0; i < N; i++) {
+
+        for (int j = 0; j < M; j++) {
+
+            if (laberint[i][j] == 1){
+
+                glBindVertexArray(VAO_Cub);
+
+                modelTransformCell(i, j);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            } else {
+
+                if (laberint[i][j] == 2) {
+
+                    glBindVertexArray(VAO_Morty);
+
+                    modelTransformMorty(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
+                } else if (laberint[i][j] == 3) {
+
+                    // Fantasma
+                } else if (laberint[i][j] == 4) {
+
+                    glBindVertexArray(VAO_Torre);
+
+                    modelTransformTorre(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, torre.faces().size() * 3);
+                } else if (laberint[i][j] == 5) {
+
+                    glBindVertexArray(VAO_Moneda);
+
+                    modelTransformMoneda(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);
+                }
+
+                glBindVertexArray(VAO_Cub);
+
+                modelTransformCellT(i, j);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
+    }
     glBindVertexArray(0);
 }
 
@@ -166,14 +242,9 @@ void MyGLWidget::viewTransform() {
 
     if (!cameraFPS) {
 
-        VM = glm::lookAt(obsPerspectiva, vrpPerspectiva, glm::vec3(0,1,0));
-
-        VM = glm::rotate(VM, angleX, glm::vec3(1,0,0));
-
-        VM = glm::rotate(VM, angleY, glm::vec3(0,1,0));
-    }
-
-    else {
+    VM = glm::lookAt(obsPerspectiva, vrpPerspectiva, glm::vec3(0,1,0));
+    
+    } else {
 
         // Posicion de la cabeza de Morty
         obsFPS = glm::vec3(mortyCol + 0.5f, 0.5f, mortyFila + 0.5f);
@@ -210,6 +281,29 @@ void MyGLWidget::viewTransform() {
     glUniformMatrix4fv(VMLoc, 1, GL_FALSE, &VM[0][0]);
 }
 
+//Las dos funciones para proyectar la vista ortogonal
+void MyGLWidget::projectTransformOrtho() {
+
+    float ample = maxEscena.x - minEscena.x;
+    float profunditat = maxEscena.z - minEscena.z;
+
+    float size = std::max(ample, profunditat) / 2.0f;
+
+    PM = glm::ortho(-size, size, -size, size, 0.1f, 4.0f * radioEscena);
+
+    glUniformMatrix4fv(PMLoc, 1, GL_FALSE, &PM[0][0]);
+}
+
+void MyGLWidget::viewTransformOrtho() {
+
+    glm::vec3 OBS = centroEscena + glm::vec3(0.0f, 3.0f * radioEscena, 0.0f);
+
+    glm::vec3 VRP = centroEscena;
+
+    VM = glm::lookAt(OBS, VRP, glm::vec3(0,0,-1));
+
+    glUniformMatrix4fv(VMLoc, 1, GL_FALSE, &VM[0][0]);
+}
 
 void MyGLWidget::keyPressEvent(QKeyEvent *event) {
 
@@ -297,16 +391,36 @@ void MyGLWidget::mouseMoveEvent(QMouseEvent *e) {
 
     if (rotating && !cameraFPS) {
 
-        angleY += (e->x() - xClick) * 0.01f;
+    angleY += (e->x() - xClick) * 0.01f;
 
-        angleX += (e->y() - yClick) * 0.01f;
+    angleX += (e->y() - yClick) * 0.01f;
 
-        xClick = e->x();
-        yClick = e->y();
+    xClick = e->x();
+    yClick = e->y();
 
-        viewTransform();
+    // Direccion inicial de la camara
+    glm::vec3 dir(0.0f, 1.0f, 1.0f);
 
-        update();
+    // Matriz de rotacion Euler
+    glm::mat4 R(1.0f);
+
+    R = glm::rotate(R, angleY, glm::vec3(0,1,0));
+
+    R = glm::rotate(R, angleX, glm::vec3(1,0,0));
+
+    // Rotar direccion
+    dir = glm::vec3(R * glm::vec4(dir, 0.0f));
+
+    dir = glm::normalize(dir);
+
+    // Orbitar alrededor del centro del mapa
+    obsPerspectiva = centroEscena + dir * distCamera;
+
+    vrpPerspectiva = centroEscena;
+
+    viewTransform();
+
+    update();
     }
 
     if (zooming && !cameraFPS) {

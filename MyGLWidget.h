@@ -43,6 +43,10 @@ class MyGLWidget : public BL2GLWidget {
     void mouseMoveEvent(QMouseEvent *e) override;
     void mouseReleaseEvent(QMouseEvent *e) override;
 
+    //Poryeccion ortogonal
+    void projectTransformOrtho();
+    void viewTransformOrtho();
+
     // Uniform locations
     GLuint PMLoc, VMLoc, TG_Loc;
 
@@ -50,6 +54,8 @@ class MyGLWidget : public BL2GLWidget {
     glm::mat4 PM;
     glm::mat4 VM;
     glm::mat4 TG;
+    //Matriz de la vision ortogonal
+    glm::mat4 PMortho;
 
     // Dimensiones del laberinto
     static const int N = 10; //filas
