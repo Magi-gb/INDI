@@ -28,6 +28,8 @@ void MyGLWidget::initializeGL() {
     findMorty();
     calculaCapsaEscena();
     initCamera();
+    lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    lightPos = centroEscena + glm::vec3(0.0f, radioEscena, 0.0f);
     creaBuffersMorty();
     creaBuffersTorre();
     creaBuffersMoneda();
@@ -66,6 +68,19 @@ void MyGLWidget::paintGL() {
     projectTransform();
 
     viewTransform();
+
+    glUniform3fv(lightPosLoc, 1, &lightPos[0]);
+
+    glUniform3fv(lightColorLoc, 1, &lightColor[0]);
+
+    glm::vec3 cameraPos;
+
+    if (cameraFPS)
+        cameraPos = obsFPS;
+    else
+        cameraPos = obsPerspectiva;
+
+    glUniform3fv(viewPosLoc, 1, &cameraPos[0]);
 
     for (int i = 0; i < N; i++) {
 
@@ -179,11 +194,20 @@ void MyGLWidget::resizeGL(int w, int h) {
 }
 
 void MyGLWidget::carregaShaders() {
+
     BL2GLWidget::carregaShaders();
 
     PMLoc = glGetUniformLocation(program->programId(), "PM");
+
     VMLoc = glGetUniformLocation(program->programId(), "VM");
+
     TG_Loc = glGetUniformLocation(program->programId(), "TG");
+
+    lightPosLoc = glGetUniformLocation(program->programId(), "lightPos");
+
+    lightColorLoc = glGetUniformLocation(program->programId(), "lightColor");
+
+    viewPosLoc = glGetUniformLocation(program->programId(), "viewPos");
 }
 
 void MyGLWidget::initCamera() {
@@ -243,7 +267,7 @@ void MyGLWidget::viewTransform() {
     if (!cameraFPS) {
 
     VM = glm::lookAt(obsPerspectiva, vrpPerspectiva, glm::vec3(0,1,0));
-    
+
     } else {
 
         // Posicion de la cabeza de Morty
@@ -676,21 +700,30 @@ void MyGLWidget::modelTransformCellT(int fila, int col) {
 }
 
 void MyGLWidget::creaBuffersMorty() {
+
     glGenVertexArrays(1, &VAO_Morty);
     glBindVertexArray(VAO_Morty);
 
-    GLuint VBO[2];
-    glGenBuffers(2, VBO);
+    GLuint VBO[3];
+    glGenBuffers(3, VBO);
 
+    // Vertices
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3*3, morty.VBO_vertices(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3 * 3, morty.VBO_vertices(), GL_STATIC_DRAW);
     glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(vertexLoc);
 
+    // Material diffuse
     glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  morty.faces().size() * 3*3, morty.VBO_matdiff(), GL_STATIC_DRAW);
-    glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3 * 3, morty.VBO_matdiff(), GL_STATIC_DRAW);
+    glVertexAttribPointer( matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(matdiffLoc);
+
+    // Normales
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3 * 3, morty.VBO_normals(), GL_STATIC_DRAW);
+    glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(normalLoc);
 
     glBindVertexArray(0);
 }
@@ -699,8 +732,8 @@ void MyGLWidget::creaBuffersTorre() {
     glGenVertexArrays(1, &VAO_Torre);
     glBindVertexArray(VAO_Torre);
 
-    GLuint VBO[2];
-    glGenBuffers(2, VBO);
+    GLuint VBO[3];
+    glGenBuffers(3, VBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * torre.faces().size() * 3*3, torre.VBO_vertices(), GL_STATIC_DRAW);
@@ -712,6 +745,11 @@ void MyGLWidget::creaBuffersTorre() {
     glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(matdiffLoc);
 
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * torre.faces().size() * 3 * 3, torre.VBO_normals(), GL_STATIC_DRAW);
+    glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(normalLoc);
+
     glBindVertexArray(0);
 }
 
@@ -719,8 +757,8 @@ void MyGLWidget::creaBuffersMoneda() {
     glGenVertexArrays(1, &VAO_Moneda);
     glBindVertexArray(VAO_Moneda);
 
-    GLuint VBO[2];
-    glGenBuffers(2, VBO);
+    GLuint VBO[3];
+    glGenBuffers(3, VBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * moneda.faces().size() * 3*3, moneda.VBO_vertices(), GL_STATIC_DRAW);
@@ -731,6 +769,11 @@ void MyGLWidget::creaBuffersMoneda() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  moneda.faces().size() * 3*3, moneda.VBO_matdiff(), GL_STATIC_DRAW);
     glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(matdiffLoc);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * moneda.faces().size() * 3 * 3, moneda.VBO_normals(), GL_STATIC_DRAW);
+    glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(normalLoc);
 
     glBindVertexArray(0);
 }

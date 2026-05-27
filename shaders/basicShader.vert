@@ -11,14 +11,20 @@ uniform mat4 TG;
 uniform mat4 PM;
 uniform mat4 VM;
 
-out vec3 vNormal;
+out vec3 FragPos;
+out vec3 Normal;
+
 out vec3 vMatamb;
 out vec3 vMatdiff;
 out vec3 vMatspec;
 out float vMatshin;
 
 void main() {
-    vNormal = normal;
+
+    FragPos = vec3(TG * vec4(vertex, 1.0));
+
+    Normal = normalize(mat3(transpose(inverse(TG))) * normal);
+
     vMatamb = matamb;
     vMatdiff = matdiff;
     vMatspec = matspec;
