@@ -65,30 +65,28 @@ class MyGLWidget : public BL2GLWidget {
     int laberint[N][M] = {
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1},
       {1,0,5,0,1,5,0,1,0,0,0,1,0,2,1},
-      {1,0,1,0,0,1,0,1,0,1,5,0,0,0,1},
+      {1,0,1,0,0,1,0,1,0,1,5,0,3,0,1},
       {1,0,1,1,0,5,0,1,0,1,0,1,1,0,4},
       {1,0,1,0,1,1,0,0,0,1,0,0,0,0,1},
       {1,0,5,0,1,0,0,0,1,1,1,1,5,1,1},
-      {1,0,1,0,0,0,1,0,5,0,0,1,0,0,1},
+      {1,0,1,0,0,0,1,0,5,0,0,0,0,0,1},
       {4,0,1,1,1,0,1,0,1,1,0,1,1,0,1},
       {1,0,0,0,1,5,1,0,5,1,0,1,5,0,1},
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1}
     };
 
-    Model morty, torre, moneda;
-    GLuint VAO_Morty, VAO_Torre, VAO_Moneda;
+    Model morty, torre, moneda, fantasma;
+    GLuint VAO_Morty, VAO_Torre, VAO_Moneda, VAO_Fantasma;
 
     void creaBuffersMorty ();
-
     void creaBuffersTorre ();
-
     void creaBuffersMoneda ();
+    void creaBuffersFantasma ();
 
     void modelTransformMorty (int fila, int col);
-
     void modelTransformTorre (int fila, int col);
-
     void modelTransformMoneda (int fila, int col);
+    void modelTransformFantasma (int fila, int col);
 
     void resizeGL(int w, int h) override;
 
@@ -105,13 +103,14 @@ class MyGLWidget : public BL2GLWidget {
     void calculaCapsaEscena();
 
     float escalaMorty;
-    glm::vec3 centreBaseMorty;
-
     float escalaTorre;
-    glm::vec3 centreBaseTorre;
-
     float escalaMoneda;
+    float escalaFantasma;
+
+    glm::vec3 centreBaseMorty;
+    glm::vec3 centreBaseTorre;
     glm::vec3 centreBaseMoneda;
+    glm::vec3 centreBaseFantasma;
 
     //Moviment Moneda
 
@@ -146,7 +145,6 @@ class MyGLWidget : public BL2GLWidget {
     bool zooming = false;
 
         //Otros
-
     bool cameraFPS = false;
 
     glm::vec3 obsPerspectiva;
@@ -171,6 +169,7 @@ class MyGLWidget : public BL2GLWidget {
     glm::vec3 direccioMiradaMorty() const;
 
     //LUZ
+    void updateLightPosition();
 
     GLuint lightPosLoc;
     GLuint lightColorLoc;
@@ -178,6 +177,8 @@ class MyGLWidget : public BL2GLWidget {
 
     glm::vec3 lightPos;
     glm::vec3 lightColor;
+
+    float angleSol = 0.0f;
     
 };
 

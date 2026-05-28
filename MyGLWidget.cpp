@@ -24,15 +24,17 @@ void MyGLWidget::initializeGL() {
     morty.load("../Models3D/Morty.obj"); 
     torre.load("../Models3D/tower.obj");
     moneda.load("../Models3D/Coin.obj");
+    fantasma.load("../Models3D/Fantasma.obj");
 
     findMorty();
     calculaCapsaEscena();
     initCamera();
     lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    lightPos = centroEscena + glm::vec3(0.0f, radioEscena, 0.0f);
+    updateLightPosition();
     creaBuffersMorty();
     creaBuffersTorre();
     creaBuffersMoneda();
+    creaBuffersFantasma();
 
     calculaCapsaModel(
         morty,
@@ -53,6 +55,13 @@ void MyGLWidget::initializeGL() {
         escalaMoneda,
         centreBaseMoneda,
         0.5f
+    );
+
+    calculaCapsaModel(
+        fantasma,
+        escalaFantasma,
+        centreBaseMoneda,
+        0.65f
     );
 
     glEnable(GL_DEPTH_TEST);
@@ -104,7 +113,11 @@ void MyGLWidget::paintGL() {
                     glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
                 } else if (laberint[i][j] == 3) {
 
-                    // Fantasma
+                    glBindVertexArray(VAO_Fantasma);
+
+                    modelTransformFantasma(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, fantasma.faces().size() *3);
                 } else if (laberint[i][j] == 4) {
 
                     glBindVertexArray(VAO_Torre);
@@ -158,7 +171,11 @@ void MyGLWidget::paintGL() {
                     glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
                 } else if (laberint[i][j] == 3) {
 
-                    // Fantasma
+                    glBindVertexArray(VAO_Fantasma);
+
+                    modelTransformFantasma(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, fantasma.faces().size() *3);
                 } else if (laberint[i][j] == 4) {
 
                     glBindVertexArray(VAO_Torre);
@@ -337,12 +354,19 @@ void MyGLWidget::keyPressEvent(QKeyEvent *event) {
 
     switch(event->key()) {
 
+    // ===================================
+    // CAMARA
+    // ===================================
+
         case Qt::Key_C:
             cameraFPS = !cameraFPS;
-
             projectTransform();
             viewTransform();
             break;
+
+    // ===================================
+    // MOVIMENT
+    // ===================================
 
         case Qt::Key_W:
         case Qt::Key_Up:
@@ -358,17 +382,31 @@ void MyGLWidget::keyPressEvent(QKeyEvent *event) {
         case Qt::Key_Left:
             giraMortyEsquerra();
             break;
-
+        
         case Qt::Key_D:
         case Qt::Key_Right:
             giraMortyDreta();
             break;
 
-        default:
-            calActualitzar = false;
-            BL2GLWidget::keyPressEvent(event);
+    // ===================================
+    // SOL
+    // ===================================
+
+        case Qt::Key_O:
+            angleSol += glm::radians(5.0f);
+            updateLightPosition();
             break;
-    }
+
+        case Qt::Key_P:
+            angleSol -= glm::radians(5.0f);
+            updateLightPosition();
+            break;
+
+    default:
+        calActualitzar = false;
+        BL2GLWidget::keyPressEvent(event);
+        break;
+}
 
     if (calActualitzar) {
         if (cameraFPS) {
@@ -611,12 +649,7 @@ glm::vec3 MyGLWidget::direccioMiradaMorty() const {
 }
 
 //Operació per l'escala dels models
-void MyGLWidget::calculaCapsaModel(
-    Model &m,
-    float &escala,
-    glm::vec3 &centreBaseModel,
-    float desiredSize
-) {
+void MyGLWidget::calculaCapsaModel(Model &m, float &escala, glm::vec3 &centreBaseModel, float desiredSize) {
 
     float minx, miny, minz;
     float maxx, maxy, maxz;
@@ -646,17 +679,12 @@ void MyGLWidget::calculaCapsaModel(
     float sizeY = maxy - miny;
     float sizeZ = maxz - minz;
 
-    float maxSize = std::max(sizeX,
-                    std::max(sizeY, sizeZ));
+    float maxSize = std::max(sizeX, std::max(sizeY, sizeZ));
 
     escala = desiredSize / maxSize;
 
     // Centro de la base
-    centreBaseModel = glm::vec3(
-        (minx + maxx) / 2.0f,
-        miny,
-        (minz + maxz) / 2.0f
-    );
+    centreBaseModel = glm::vec3((minx + maxx) / 2.0f, miny, (minz + maxz) / 2.0f);
 }
 
 void MyGLWidget::calculaCapsaEscena() {
@@ -778,6 +806,31 @@ void MyGLWidget::creaBuffersMoneda() {
     glBindVertexArray(0);
 }
 
+void MyGLWidget::creaBuffersFantasma() {
+    glGenVertexArrays(1, &VAO_Fantasma);
+    glBindVertexArray(VAO_Fantasma);
+
+    GLuint VBO[3];
+    glGenBuffers(3, VBO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fantasma.faces().size() * 3*3, fantasma.VBO_vertices(), GL_STATIC_DRAW);
+    glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexLoc);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  fantasma.faces().size() * 3*3, fantasma.VBO_matdiff(), GL_STATIC_DRAW);
+    glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(matdiffLoc);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fantasma.faces().size() * 3 * 3, fantasma.VBO_normals(), GL_STATIC_DRAW);
+    glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(normalLoc);
+
+    glBindVertexArray(0);
+}
+
 void MyGLWidget::modelTransformMorty(int fila, int col) {
     glm::mat4 TG(1.0f);
 
@@ -798,7 +851,7 @@ void MyGLWidget::modelTransformMoneda(int fila, int col) {
 
     glm::mat4 TG(1.0f);
 
-    TG = glm::translate( TG, glm::vec3(col + 0.5f, 0.0f, fila + 0.5f));
+    TG = glm::translate( TG, glm::vec3(col + 0.5f, 0.5f, fila + 0.5f));
 
     TG = glm::rotate( TG, glm::radians(angleCoin), glm::vec3(0,1,0));
 
@@ -822,7 +875,7 @@ void MyGLWidget::modelTransformTorre(int fila, int col) {
     } else if (fila == (N-1)) {
         TG = glm::rotate(TG, glm::radians(180.0f), glm::vec3(0, 1, 0));
     }
-    TG = glm::translate(TG, glm::vec3(0.0f, 0.0f, -2.5f));
+    TG = glm::translate(TG, glm::vec3(0.5f, 0.0f, -2.5f));
 
     TG = glm::scale(TG, glm::vec3(escalaTorre));
 
@@ -831,3 +884,23 @@ void MyGLWidget::modelTransformTorre(int fila, int col) {
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }
 
+void MyGLWidget::modelTransformFantasma(int fila, int col) {
+
+    glm::mat4 TG(1.0f);
+
+    TG = glm::translate( TG, glm::vec3(col + 0.5f, 0.0f, fila + 0.5f));
+
+    TG = glm::scale(TG, glm::vec3(escalaFantasma));
+
+    //TG = glm::translate(TG, -centreBaseFantasma);
+
+    glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
+}
+
+//Funcions llum
+void MyGLWidget::updateLightPosition() {
+
+    lightPos.x = centroEscena.x + radioEscena * cos(angleSol);
+    lightPos.y = centroEscena.y + radioEscena * sin(angleSol);
+    lightPos.z = centroEscena.z;
+}
