@@ -27,6 +27,7 @@ void MyGLWidget::initializeGL() {
     fantasma.load("../Models3D/Fantasma.obj");
 
     findMorty();
+    findGhost();
     calculaCapsaEscena();
     initCamera();
     lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -69,7 +70,6 @@ void MyGLWidget::initializeGL() {
 
 
 void MyGLWidget::paintGL() {
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glViewport(0, 0, width(), height());
@@ -77,6 +77,87 @@ void MyGLWidget::paintGL() {
     projectTransform();
 
     viewTransform();
+
+    sendLightUniforms();
+
+    renderScene();
+
+    glViewport(width() - width()/4, 0, width()/4, height()/4);
+
+    setupMiniMapCamera();
+
+    renderScene();
+
+    glBindVertexArray(0);
+}
+
+void MyGLWidget::renderScene() {
+    for (int i = 0; i < N; i++) {
+
+        for (int j = 0; j < M; j++) {
+
+            if (laberint[i][j] == 1){
+
+                glBindVertexArray(VAO_Cub);
+
+                modelTransformCell(i, j);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            } else {
+
+                if (laberint[i][j] == 2) {
+
+                    glBindVertexArray(VAO_Morty);
+
+                    modelTransformMorty(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
+                } else if (laberint[i][j] == 3) {
+
+                    glBindVertexArray(VAO_Fantasma);
+
+                    modelTransformFantasma(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, fantasma.faces().size() *3);
+                } else if (laberint[i][j] == 4) {
+
+                    glBindVertexArray(VAO_Torre);
+
+                    modelTransformTorre(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, torre.faces().size() * 3);
+                } else if (laberint[i][j] == 5) {
+
+                    glBindVertexArray(VAO_Moneda);
+
+                    modelTransformMoneda(i, j);
+
+                    glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);
+                }
+
+                glBindVertexArray(VAO_Cub);
+
+                modelTransformCellT(i, j);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
+    }
+}
+
+void MyGLWidget::setupMiniMapCamera() {
+    OBSOrto = centroEscena + glm::vec3(0.0f, 3.0f * radioEscena, 0.0f);
+
+    glUniform3fv(viewPosLoc, 1, &OBSOrto[0]);
+
+    glUniform1i(nightModeLoc, false);
+
+    projectTransformOrtho();
+
+    viewTransformOrtho();
+}
+
+void MyGLWidget::sendLightUniforms() {
 
     glUniform3fv(lightPosLoc, 1, &lightPos[0]);
 
@@ -91,116 +172,73 @@ void MyGLWidget::paintGL() {
 
     glUniform3fv(viewPosLoc, 1, &cameraPos[0]);
 
-    for (int i = 0; i < N; i++) {
+    glUniform1i(nightModeLoc, nightMode);
 
+    glm::vec3 flashlightPos(
+        mortyCol + 0.5f,
+        0.5f,
+        mortyFila + 0.5f
+    );
+
+    glm::vec3 flashlightDir;
+
+    switch (dirMorty) {
+
+        case 0:
+            flashlightDir = glm::vec3(0,0,-1);
+            break;
+
+        case 1:
+            flashlightDir = glm::vec3(1,0,0);
+            break;
+
+        case 2:
+            flashlightDir = glm::vec3(0,0,1);
+            break;
+
+        case 3:
+            flashlightDir = glm::vec3(-1,0,0);
+            break;
+
+        default:
+            flashlightDir = glm::vec3(1,0,0);
+    }
+
+    glUniform3fv(flashlightPosLoc, 1, &flashlightPos[0]);
+
+    glUniform3fv(flashlightDirLoc, 1, &flashlightDir[0]);
+
+    glm::vec3 ghostLightPos(fantasmaCol + 0.5f, 1.0f, fantasmaFila + 0.5f);
+
+    glm::vec3 ghostLightColor(1.0f, 1.0f, 1.0f);
+
+    glUniform3fv(ghostLightPosLoc, 1, &ghostLightPos[0]);
+
+    glUniform3fv(ghostLightColorLoc, 1, &ghostLightColor[0]);
+
+    glm::vec3 coinPositions[10];
+    glm::vec3 coinDirections[10];
+
+    int k = 0;
+
+    for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
 
-            if (laberint[i][j] == 1){
+            if (laberint[i][j] == 5) {
+                coinPositions[k] = glm::vec3(j + 0.5f, 0.5f, i + 0.5f);
 
-                glBindVertexArray(VAO_Cub);
+                float a = glm::radians(angleCoin);
 
-                modelTransformCell(i, j);
+                coinDirections[k] = glm::vec3(-sin(a), 0.0f, -cos(a));
 
-                glDrawArrays(GL_TRIANGLES, 0, 36);
-            } else {
-
-                if (laberint[i][j] == 2) {
-
-                    glBindVertexArray(VAO_Morty);
-
-                    modelTransformMorty(i, j);
-
-                    glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
-                } else if (laberint[i][j] == 3) {
-
-                    glBindVertexArray(VAO_Fantasma);
-
-                    modelTransformFantasma(i, j);
-
-                    glDrawArrays(GL_TRIANGLES, 0, fantasma.faces().size() *3);
-                } else if (laberint[i][j] == 4) {
-
-                    glBindVertexArray(VAO_Torre);
-
-                    modelTransformTorre(i, j);
-
-                    glDrawArrays(GL_TRIANGLES, 0, torre.faces().size() * 3);
-                } else if (laberint[i][j] == 5) {
-
-                    glBindVertexArray(VAO_Moneda);
-
-                    modelTransformMoneda(i, j);
-
-                    glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);
-                }
-
-                glBindVertexArray(VAO_Cub);
-
-                modelTransformCellT(i, j);
-
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                k++;
             }
         }
     }
 
-    glViewport(width() - width()/4, 0, width()/4, height()/4);
+    glUniform3fv(coinLightPosLoc, 10, &coinPositions[0].x);
 
-    projectTransformOrtho();
-
-    viewTransformOrtho();
-
-    for (int i = 0; i < N; i++) {
-
-        for (int j = 0; j < M; j++) {
-
-            if (laberint[i][j] == 1){
-
-                glBindVertexArray(VAO_Cub);
-
-                modelTransformCell(i, j);
-
-                glDrawArrays(GL_TRIANGLES, 0, 36);
-            } else {
-
-                if (laberint[i][j] == 2) {
-
-                    glBindVertexArray(VAO_Morty);
-
-                    modelTransformMorty(i, j);
-
-                    glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
-                } else if (laberint[i][j] == 3) {
-
-                    glBindVertexArray(VAO_Fantasma);
-
-                    modelTransformFantasma(i, j);
-
-                    glDrawArrays(GL_TRIANGLES, 0, fantasma.faces().size() *3);
-                } else if (laberint[i][j] == 4) {
-
-                    glBindVertexArray(VAO_Torre);
-
-                    modelTransformTorre(i, j);
-
-                    glDrawArrays(GL_TRIANGLES, 0, torre.faces().size() * 3);
-                } else if (laberint[i][j] == 5) {
-
-                    glBindVertexArray(VAO_Moneda);
-
-                    modelTransformMoneda(i, j);
-
-                    glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);
-                }
-
-                glBindVertexArray(VAO_Cub);
-
-                modelTransformCellT(i, j);
-
-                glDrawArrays(GL_TRIANGLES, 0, 36);
-            }
-        }
-    }
-    glBindVertexArray(0);
+    glUniform3fv(coinLightDirLoc, 10, &coinDirections[0].x);
 }
 
 void MyGLWidget::resizeGL(int w, int h) {
@@ -225,6 +263,20 @@ void MyGLWidget::carregaShaders() {
     lightColorLoc = glGetUniformLocation(program->programId(), "lightColor");
 
     viewPosLoc = glGetUniformLocation(program->programId(), "viewPos");
+
+    nightModeLoc = glGetUniformLocation(program->programId(), "nightMode");
+
+    flashlightPosLoc = glGetUniformLocation(program->programId(), "flashlightPos");
+
+    flashlightDirLoc = glGetUniformLocation(program->programId(), "flashlightDir");
+
+    ghostLightPosLoc = glGetUniformLocation(program->programId(), "ghostLightPos");
+
+    ghostLightColorLoc = glGetUniformLocation(program->programId(), "ghostLightColor");
+
+    coinLightPosLoc = glGetUniformLocation(program->programId(), "coinLightPos");
+
+    coinLightDirLoc = glGetUniformLocation(program->programId(), "coinLightDir");
 }
 
 void MyGLWidget::initCamera() {
@@ -401,6 +453,10 @@ void MyGLWidget::keyPressEvent(QKeyEvent *event) {
             angleSol -= glm::radians(5.0f);
             updateLightPosition();
             break;
+        case Qt::Key_N:
+            nightMode = !nightMode;
+            update();
+            break;
 
     default:
         calActualitzar = false;
@@ -527,6 +583,48 @@ void MyGLWidget::findMorty() {
     }
 }
 
+void MyGLWidget::findGhost() {
+    for (int i=0; i<N; i++) {
+        for (int j=0; j<M; j++) {
+
+            if (laberint[i][j] == 3) {
+
+                fantasmaFila = i;
+                fantasmaCol = j;
+
+                return;
+            }
+        }
+    }
+}
+
+bool MyGLWidget::casellaLliure(int fila, int col) const {
+    if (fila < 0 || fila >= N) return false;
+    if (col < 0 || col >= M) return false;
+
+    return (laberint[fila][col] != 1 &&
+            laberint[fila][col] != 4);
+}
+
+std::vector<int> MyGLWidget::direccionsPossiblesFantasma() const {
+
+    std::vector<int> dirs;
+
+    const int df[4] = {-1,0,1,0};
+    const int dc[4] = {0,1,0,-1};
+
+    for (int d = 0; d < 4; d++) {
+
+        int f = fantasmaFila + df[d];
+        int c = fantasmaCol + dc[d];
+
+        if (casellaLliure(f, c))
+            dirs.push_back(d);
+    }
+
+    return dirs;
+}
+
 void MyGLWidget::moveMorty(int df, int dc) {
     int novaFila = mortyFila + df;
     int novaCol = mortyCol + dc;
@@ -560,6 +658,31 @@ void MyGLWidget::moveMorty(int df, int dc) {
     mortyCol = novaCol;
 }
 
+void MyGLWidget::moveFantasma(int df, int dc) {
+
+    int novaFila = fantasmaFila + df;
+    int novaCol = fantasmaCol + dc;
+
+    if (novaFila < 0 || novaFila >= N ||
+        novaCol < 0 || novaCol >= M)
+        return;
+
+    if (laberint[novaFila][novaCol] == 1)
+        return;
+
+    if (laberint[novaFila][novaCol] == 4)
+        return;
+
+    if (laberint[novaFila][novaCol] == 5)
+        return; // opcional
+
+    laberint[fantasmaFila][fantasmaCol] = 0;
+    laberint[novaFila][novaCol] = 3;
+
+    fantasmaFila = novaFila;
+    fantasmaCol = novaCol;
+}
+
 void MyGLWidget::mouMortyEndavant() {
 
     switch (dirMorty) {
@@ -579,6 +702,7 @@ void MyGLWidget::mouMortyEndavant() {
             moveMorty(0, -1);
             break;
     }
+    mouFantasma();
 }
 
 void MyGLWidget::mouMortyEnrere() {
@@ -600,6 +724,29 @@ void MyGLWidget::mouMortyEnrere() {
             moveMorty(0, 1);
             break;
     }
+    mouFantasma();
+}
+
+void MyGLWidget::mouFantasma() {
+
+    auto dirs = direccionsPossiblesFantasma();
+
+    glm::ivec2 dirActual = direccioFantasma();
+
+    bool bloquejat = !casellaLliure(fantasmaFila + dirActual.x, fantasmaCol  + dirActual.y);
+
+    bool interseccio = dirs.size() > 2;
+
+    if (bloquejat || interseccio) {
+
+        int idx = rand() % dirs.size();
+
+        dirFantasma = dirs[idx];
+    }
+
+    glm::ivec2 dir = direccioFantasma();
+
+    moveFantasma(dir.x, dir.y);
 }
 
 void MyGLWidget::giraMortyEsquerra() {
@@ -646,6 +793,26 @@ glm::vec3 MyGLWidget::direccioMiradaMorty() const {
     }
 
     return glm::vec3(1.0f, 0.0f, 0.0f);
+}
+
+glm::ivec2 MyGLWidget::direccioFantasma() const {
+
+    switch(dirFantasma) {
+
+        case 0:
+            return {-1,0}; // Norte
+
+        case 1:
+            return {0,1}; // Este
+
+        case 2:
+            return {1,0}; // Sur
+
+        case 3:
+            return {0,-1}; // Oeste
+    }
+
+    return {0,1};
 }
 
 //Operació per l'escala dels models
@@ -892,7 +1059,7 @@ void MyGLWidget::modelTransformFantasma(int fila, int col) {
 
     TG = glm::scale(TG, glm::vec3(escalaFantasma));
 
-    //TG = glm::translate(TG, -centreBaseFantasma);
+    //TG = glm::translate(TG, -centreBaseFantasma); // No se porque lo mueve donde no toca
 
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }

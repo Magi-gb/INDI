@@ -65,10 +65,10 @@ class MyGLWidget : public BL2GLWidget {
     int laberint[N][M] = {
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1},
       {1,0,5,0,1,5,0,1,0,0,0,1,0,2,1},
-      {1,0,1,0,0,1,0,1,0,1,5,0,3,0,1},
+      {1,0,1,0,0,1,0,1,0,1,5,0,0,0,1},
       {1,0,1,1,0,5,0,1,0,1,0,1,1,0,4},
       {1,0,1,0,1,1,0,0,0,1,0,0,0,0,1},
-      {1,0,5,0,1,0,0,0,1,1,1,1,5,1,1},
+      {1,0,5,0,1,0,3,0,1,1,1,1,5,1,1},
       {1,0,1,0,0,0,1,0,5,0,0,0,0,0,1},
       {4,0,1,1,1,0,1,0,1,1,0,1,1,0,1},
       {1,0,0,0,1,5,1,0,5,1,0,1,5,0,1},
@@ -88,9 +88,12 @@ class MyGLWidget : public BL2GLWidget {
     void modelTransformMoneda (int fila, int col);
     void modelTransformFantasma (int fila, int col);
 
-    void resizeGL(int w, int h) override;
+    // FUNCIONS RESUMS
+    void sendLightUniforms();
+    void renderScene();
+    void setupMiniMapCamera();
 
-    void moveMorty(int df, int dc);
+    void resizeGL(int w, int h) override;
 
     //Escalas models
     void calculaCapsaModel(
@@ -118,12 +121,19 @@ class MyGLWidget : public BL2GLWidget {
     float angleCoin = 0.0f;
 
     //Moviment Morty
-
+    void moveMorty(int df, int dc);
     void mouMortyEndavant();
     void mouMortyEnrere();
     void giraMortyEsquerra();
     void giraMortyDreta();
     float angleFromDirMorty() const;
+
+    //Moviment Fantasma
+    void moveFantasma(int df, int dc);
+    void mouFantasma();
+    std::vector<int> direccionsPossiblesFantasma() const;
+    bool casellaLliure(int fila, int col) const;
+    glm::ivec2 direccioFantasma() const;
 
     glm::vec3 minEscena;
     glm::vec3 maxEscena;
@@ -153,6 +163,8 @@ class MyGLWidget : public BL2GLWidget {
     glm::vec3 obsFPS;
     glm::vec3 vrpFPS;
 
+    glm::vec3 OBSOrto;
+
     float fovPerspectiva;
     float fovFPS;
 
@@ -161,10 +173,16 @@ class MyGLWidget : public BL2GLWidget {
     int mortyFila;
     int mortyCol;
 
+    //Posicion de Fantasma
+    void findGhost();
+    int fantasmaFila;
+    int fantasmaCol;
+    int dirFantasma;
+
     // Direccion de Morty
     float angleMorty = -90.0f;
 
-    int dirMorty = 1;
+    int dirMorty = 2;
 
     glm::vec3 direccioMiradaMorty() const;
 
@@ -179,6 +197,16 @@ class MyGLWidget : public BL2GLWidget {
     glm::vec3 lightColor;
 
     float angleSol = 0.0f;
+
+    bool nightMode = false;
+
+    GLuint nightModeLoc;
+    GLuint flashlightPosLoc;
+    GLuint flashlightDirLoc;
+    GLuint ghostLightPosLoc;
+    GLuint ghostLightColorLoc;
+    GLuint coinLightPosLoc;
+    GLuint coinLightDirLoc;
     
 };
 
