@@ -1,4 +1,4 @@
-// MyGLWidget.cpp
+
 #include "MyGLWidget.h"
 #include <iostream>
 #include <stdio.h>
@@ -22,7 +22,6 @@ void MyGLWidget::initializeGL() {
     BL2GLWidget::initializeGL();
 
     morty.load("../Models3D/Morty.obj"); 
-    torre.load("../Models3D/tower.obj");
     moneda.load("../Models3D/Coin.obj");
     fantasma.load("../Models3D/Fantasma.obj");
 
@@ -33,9 +32,25 @@ void MyGLWidget::initializeGL() {
     lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
     updateLightPosition();
     creaBuffersMorty();
-    creaBuffersTorre();
+    creaBuffersAssimp();
     creaBuffersMoneda();
     creaBuffersFantasma();
+
+    //TEXTURAS Y RESIZE DEL CUB
+    glm::vec3 bbMinWall  = wallMesh->GetBBMin();
+    glm::vec3 bbSizeWall = wallMesh->GetBBSize();
+    float maxSizeWall = std::max(bbSizeWall.x, std::max(bbSizeWall.y, bbSizeWall.z));
+    escalaWall = 1.0f / maxSizeWall;
+    centreBaseWall = glm::vec3(bbMinWall.x + bbSizeWall.x / 2.0f, bbMinWall.y, bbMinWall.z + bbSizeWall.z / 2.0f);
+
+    //TEXTURAS Y RESIZE DE LA TORRE
+    glm::vec3 bbMin  = towerMesh->GetBBMin();
+    glm::vec3 bbSize = towerMesh->GetBBSize();
+    float maxSize = std::max(bbSize.x, std::max(bbSize.y, bbSize.z));
+    escalaTorre = 6.0f / maxSize;
+    centreBaseTorre = glm::vec3(bbMin.x + bbSize.x / 2.0f, bbMin.y, bbMin.z + bbSize.z / 2.0f);
+
+    radioBaseTorre = (bbSize.z / 2.0f) * escalaTorre;
 
     calculaCapsaModel(
         morty,
@@ -44,12 +59,12 @@ void MyGLWidget::initializeGL() {
         1.5f
     );
 
-    calculaCapsaModel(
+    /*calculaCapsaModel(
         torre,
         escalaTorre,
         centreBaseTorre,
         6.0f
-    );
+    );*/
 
     calculaCapsaModel(
         moneda,
@@ -98,11 +113,9 @@ void MyGLWidget::renderScene() {
 
             if (laberint[i][j] == 1){
 
-                glBindVertexArray(VAO_Cub);
-
                 modelTransformCell(i, j);
 
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                wallMesh->Render();
             } else {
 
                 if (laberint[i][j] == 2) {
@@ -121,11 +134,9 @@ void MyGLWidget::renderScene() {
                     glDrawArrays(GL_TRIANGLES, 0, fantasma.faces().size() *3);
                 } else if (laberint[i][j] == 4) {
 
-                    glBindVertexArray(VAO_Torre);
-
                     modelTransformTorre(i, j);
 
-                    glDrawArrays(GL_TRIANGLES, 0, torre.faces().size() * 3);
+                    towerMesh->Render();
                 } else if (laberint[i][j] == 5) {
 
                     glBindVertexArray(VAO_Moneda);
@@ -134,13 +145,10 @@ void MyGLWidget::renderScene() {
 
                     glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);
                 }
-
-                glBindVertexArray(VAO_Cub);
-
-                modelTransformCellT(i, j);
-
-                glDrawArrays(GL_TRIANGLES, 0, 36);
             }
+            modelTransformCellT(i, j);
+
+            wallMesh->Render();
         }
     }
 }
@@ -277,6 +285,10 @@ void MyGLWidget::carregaShaders() {
     coinLightPosLoc = glGetUniformLocation(program->programId(), "coinLightPos");
 
     coinLightDirLoc = glGetUniformLocation(program->programId(), "coinLightDir");
+
+    texUVLoc = glGetAttribLocation(program->programId(), "texCoord");
+    
+    colorMapLoc = glGetUniformLocation(program->programId(), "colorMap");
 }
 
 void MyGLWidget::initCamera() {
@@ -878,19 +890,28 @@ void MyGLWidget::rotateCoins() {
 }
 
 void MyGLWidget::modelTransformCell(int fila, int col) {
+    
     glm::mat4 TG(1.0f);
 
-    TG = glm::translate(TG, glm::vec3(col, 0.0f, fila));
-
+    TG = glm::translate(TG, glm::vec3(col + 0.5f, 0.0f, fila + 0.5f));
+    
+    TG = glm::scale(TG, glm::vec3(escalaWall));
+    
+    TG = glm::translate(TG, -centreBaseWall);
+    
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }
 
 void MyGLWidget::modelTransformCellT(int fila, int col) {
+    
     glm::mat4 TG(1.0f);
 
-    TG = glm::translate(TG, glm::vec3(col, -0.1f, fila));
-    TG = glm::scale(TG, glm::vec3(1.0f, 0.1f, 1.0f));
-
+    TG = glm::translate(TG, glm::vec3(col + 0.5f, -0.1f, fila + 0.5f));
+    
+    TG = glm::scale(TG, glm::vec3(escalaWall, escalaWall * 0.1f, escalaWall));
+    
+    TG = glm::translate(TG, -centreBaseWall);
+    
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }
 
@@ -917,31 +938,6 @@ void MyGLWidget::creaBuffersMorty() {
     // Normales
     glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3 * 3, morty.VBO_normals(), GL_STATIC_DRAW);
-    glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(normalLoc);
-
-    glBindVertexArray(0);
-}
-
-void MyGLWidget::creaBuffersTorre() {
-    glGenVertexArrays(1, &VAO_Torre);
-    glBindVertexArray(VAO_Torre);
-
-    GLuint VBO[3];
-    glGenBuffers(3, VBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * torre.faces().size() * 3*3, torre.VBO_vertices(), GL_STATIC_DRAW);
-    glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(vertexLoc);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  torre.faces().size() * 3*3, torre.VBO_matdiff(), GL_STATIC_DRAW);
-    glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(matdiffLoc);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * torre.faces().size() * 3 * 3, torre.VBO_normals(), GL_STATIC_DRAW);
     glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(normalLoc);
 
@@ -998,6 +994,16 @@ void MyGLWidget::creaBuffersFantasma() {
     glBindVertexArray(0);
 }
 
+void MyGLWidget::creaBuffersAssimp() {
+    QOpenGLFunctions_3_3_Core* f = this;  // cast explícito
+
+    wallMesh = new Mesh(f, vertexLoc, normalLoc, texUVLoc, matdiffLoc, matspecLoc, matambLoc, matshinLoc);
+    wallMesh->LoadMesh("../Models3D/block.obj");
+
+    towerMesh = new Mesh(f, vertexLoc, normalLoc, texUVLoc, matdiffLoc, matspecLoc, matambLoc, matshinLoc);
+    towerMesh->LoadMesh("../Models3D/tower.obj");
+}
+
 void MyGLWidget::modelTransformMorty(int fila, int col) {
     glm::mat4 TG(1.0f);
 
@@ -1032,9 +1038,10 @@ void MyGLWidget::modelTransformMoneda(int fila, int col) {
 void MyGLWidget::modelTransformTorre(int fila, int col) {
     glm::mat4 TG(1.0f);
 
-    TG = glm::translate(TG, glm::vec3(col, 0, fila));
+    // Trasladar al centro de la celda
+    TG = glm::translate(TG, glm::vec3(col + 0.5f, 0.0f, fila + 0.5f));
 
-    //Estos if's sirven para que la torre aparezca en las salidas, mire correctamente y no se coma el laberinto
+    // Rotar según en qué borde del laberinto está
     if (col == 0){
         TG = glm::rotate(TG, glm::radians(90.0f), glm::vec3(0, 1, 0));
     } else if (col == (M-1)){
@@ -1042,7 +1049,10 @@ void MyGLWidget::modelTransformTorre(int fila, int col) {
     } else if (fila == (N-1)) {
         TG = glm::rotate(TG, glm::radians(180.0f), glm::vec3(0, 1, 0));
     }
-    TG = glm::translate(TG, glm::vec3(0.5f, 0.0f, -2.5f));
+    // fila == 0 no necesita rotación, ya mira hacia dentro
+
+    // Empujar la torre hacia atrás para que la puerta quede en el borde de la celda
+    TG = glm::translate(TG, glm::vec3(0.0f, 0.0f, -(radioBaseTorre - 0.5f)));
 
     TG = glm::scale(TG, glm::vec3(escalaTorre));
 
@@ -1058,8 +1068,6 @@ void MyGLWidget::modelTransformFantasma(int fila, int col) {
     TG = glm::translate( TG, glm::vec3(col + 0.5f, 0.0f, fila + 0.5f));
 
     TG = glm::scale(TG, glm::vec3(escalaFantasma));
-
-    //TG = glm::translate(TG, -centreBaseFantasma); // No se porque lo mueve donde no toca
 
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }

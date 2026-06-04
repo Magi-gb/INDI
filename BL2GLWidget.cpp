@@ -85,6 +85,9 @@ void BL2GLWidget::carregaShaders()
 
   // Uniform de transformació de model
   transLoc = glGetUniformLocation(program->programId(), "TG");
+
+  //Texturas
+  texUVLoc = glGetAttribLocation(program->programId(), "texCoord");
 }
 
 
@@ -159,6 +162,27 @@ void BL2GLWidget::creaBuffersCub ()
        vertexs[5], vertexs[7], vertexs[6]
   };
 
+  glm::vec2 uvcub[36] = {
+    // Cara Z- 
+    glm::vec2(0,0), glm::vec2(1,0), glm::vec2(0,1),
+    glm::vec2(0,1), glm::vec2(1,0), glm::vec2(1,1),
+    // Cara X+
+    glm::vec2(0,0), glm::vec2(1,0), glm::vec2(0,1),
+    glm::vec2(1,0), glm::vec2(1,1), glm::vec2(0,1),
+    // Cara Y+
+    glm::vec2(0,0), glm::vec2(1,0), glm::vec2(0,1),
+    glm::vec2(0,1), glm::vec2(1,0), glm::vec2(1,1),
+    // Cara X-
+    glm::vec2(0,0), glm::vec2(1,0), glm::vec2(1,1),
+    glm::vec2(0,0), glm::vec2(1,1), glm::vec2(0,1),
+    // Cara Y-
+    glm::vec2(0,0), glm::vec2(1,0), glm::vec2(0,1),
+    glm::vec2(1,0), glm::vec2(1,1), glm::vec2(0,1),
+    // Cara Z+
+    glm::vec2(0,0), glm::vec2(1,0), glm::vec2(0,1),
+    glm::vec2(1,0), glm::vec2(1,1), glm::vec2(0,1)
+};
+
   // VBO amb la normal de cada vèrtex
   glm::vec3 normals[6] = {
        /* 0*/ glm::vec3( 1.0, 0.0,  0.0),  /* 1*/ glm::vec3( -1.0, 0.0, 0.0),
@@ -228,7 +252,7 @@ void BL2GLWidget::creaBuffersCub ()
   glGenVertexArrays(1, &VAO_Cub);
   glBindVertexArray(VAO_Cub);
 
-  GLuint VBO_Cub[6];
+  GLuint VBO_Cub[7];
   glGenBuffers(6, VBO_Cub);
   glBindBuffer(GL_ARRAY_BUFFER, VBO_Cub[0]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(poscub), poscub, GL_STATIC_DRAW);
@@ -269,6 +293,11 @@ void BL2GLWidget::creaBuffersCub ()
   // Buffer de component shininness
   glBindBuffer(GL_ARRAY_BUFFER, VBO_Cub[5]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(matshincub), matshincub, GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_Cub[6]);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(uvcub), uvcub, GL_STATIC_DRAW);
+  glVertexAttribPointer(texUVLoc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(texUVLoc);
 
   glVertexAttribPointer(matshinLoc, 1, GL_FLOAT, GL_FALSE, 0, 0);
   glEnableVertexAttribArray(matshinLoc);

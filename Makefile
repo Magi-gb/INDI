@@ -16,8 +16,8 @@ CC            = gcc
 CXX           = g++
 DEFINES       = -DQT_NO_DEBUG -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -O2 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
-CXXFLAGS      = -pipe -O2 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -I/usr/include/glm -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
+CXXFLAGS      = -pipe -isystem /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/include -O2 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
+INCPATH       = -I. -I/usr/include/glm -Iassimp -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
 QMAKE         = /usr/lib/qt5/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -40,7 +40,7 @@ DISTNAME      = Bloc2_Exemple1.0.0
 DISTDIR = /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/.tmp/Bloc2_Exemple1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1
-LIBS          = $(SUBLIBS) /usr/lib/x86_64-linux-gnu/libQt5OpenGL.so /usr/lib/x86_64-linux-gnu/libQt5Widgets.so /usr/lib/x86_64-linux-gnu/libQt5Gui.so /usr/lib/x86_64-linux-gnu/libQt5Core.so -lGL -lpthread   
+LIBS          = $(SUBLIBS) /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/lib/libassimp.a /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/lib/libdraco.a /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/lib/libkubazip.a /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/lib/libminizip.a /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/lib/libpoly2tri.a /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/lib/libpolyclipping.a /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/lib/libpugixml.a /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/lib/libz.a /usr/lib/x86_64-linux-gnu/libQt5OpenGL.so /usr/lib/x86_64-linux-gnu/libQt5Widgets.so /usr/lib/x86_64-linux-gnu/libQt5Gui.so /usr/lib/x86_64-linux-gnu/libQt5Core.so -lGL -lpthread   
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -56,7 +56,11 @@ SOURCES       = main.cpp \
 		MyForm.cpp \
 		BL2GLWidget.cpp \
 		MyGLWidget.cpp \
-		model.cpp moc_MyForm.cpp \
+		model.cpp \
+		assimp/Mesh.cpp \
+		assimp/ogldev_texture.cpp \
+		assimp/ogldev_util.cpp \
+		assimp/3rdparty/stb_image.cpp moc_MyForm.cpp \
 		moc_BL2GLWidget.cpp \
 		moc_MyGLWidget.cpp
 OBJECTS       = main.o \
@@ -64,6 +68,10 @@ OBJECTS       = main.o \
 		BL2GLWidget.o \
 		MyGLWidget.o \
 		model.o \
+		Mesh.o \
+		ogldev_texture.o \
+		ogldev_util.o \
+		stb_image.o \
 		moc_MyForm.o \
 		moc_BL2GLWidget.o \
 		moc_MyGLWidget.o
@@ -151,7 +159,11 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		MyForm.cpp \
 		BL2GLWidget.cpp \
 		MyGLWidget.cpp \
-		model.cpp
+		model.cpp \
+		assimp/Mesh.cpp \
+		assimp/ogldev_texture.cpp \
+		assimp/ogldev_util.cpp \
+		assimp/3rdparty/stb_image.cpp
 QMAKE_TARGET  = Bloc2_Exemple
 DESTDIR       = 
 TARGET        = Bloc2_Exemple
@@ -336,7 +348,7 @@ distdir: FORCE
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents MyForm.h BL2GLWidget.h MyGLWidget.h model.h $(DISTDIR)/
-	$(COPY_FILE) --parents main.cpp MyForm.cpp BL2GLWidget.cpp MyGLWidget.cpp model.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents main.cpp MyForm.cpp BL2GLWidget.cpp MyGLWidget.cpp model.cpp assimp/Mesh.cpp assimp/ogldev_texture.cpp assimp/ogldev_util.cpp assimp/3rdparty/stb_image.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents MyForm.ui $(DISTDIR)/
 
 
@@ -367,7 +379,7 @@ compiler_moc_predefs_make_all: moc_predefs.h
 compiler_moc_predefs_clean:
 	-$(DEL_FILE) moc_predefs.h
 moc_predefs.h: /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
-	g++ -pipe -O2 -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
+	g++ -pipe -isystem /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp/include -O2 -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 
 compiler_moc_header_make_all: moc_MyForm.cpp moc_BL2GLWidget.cpp moc_MyGLWidget.cpp
 compiler_moc_header_clean:
@@ -377,21 +389,31 @@ moc_MyForm.cpp: MyForm.h \
 		MyGLWidget.h \
 		model.h \
 		BL2GLWidget.h \
+		assimp/Mesh.h \
+		assimp/include/assimp/Importer.hpp \
+		assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/ogldev_texture.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
-	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR -I/usr/include/glm -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/13 -I/usr/include/x86_64-linux-gnu/c++/13 -I/usr/include/c++/13/backward -I/usr/lib/gcc/x86_64-linux-gnu/13/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include MyForm.h -o moc_MyForm.cpp
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR -I/usr/include/glm -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/13 -I/usr/include/x86_64-linux-gnu/c++/13 -I/usr/include/c++/13/backward -I/usr/lib/gcc/x86_64-linux-gnu/13/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include MyForm.h -o moc_MyForm.cpp
 
 moc_BL2GLWidget.cpp: BL2GLWidget.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
-	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR -I/usr/include/glm -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/13 -I/usr/include/x86_64-linux-gnu/c++/13 -I/usr/include/c++/13/backward -I/usr/lib/gcc/x86_64-linux-gnu/13/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include BL2GLWidget.h -o moc_BL2GLWidget.cpp
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR -I/usr/include/glm -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/13 -I/usr/include/x86_64-linux-gnu/c++/13 -I/usr/include/c++/13/backward -I/usr/lib/gcc/x86_64-linux-gnu/13/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include BL2GLWidget.h -o moc_BL2GLWidget.cpp
 
 moc_MyGLWidget.cpp: MyGLWidget.h \
 		model.h \
 		BL2GLWidget.h \
+		assimp/Mesh.h \
+		assimp/include/assimp/Importer.hpp \
+		assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/ogldev_texture.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
-	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR -I/usr/include/glm -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/13 -I/usr/include/x86_64-linux-gnu/c++/13 -I/usr/include/c++/13/backward -I/usr/lib/gcc/x86_64-linux-gnu/13/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include MyGLWidget.h -o moc_MyGLWidget.cpp
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR -I/usr/include/glm -I/home/magigb/INDI/Projecte/Codi-Esquelet-Bloc2-PR/assimp -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/13 -I/usr/include/x86_64-linux-gnu/c++/13 -I/usr/include/c++/13/backward -I/usr/lib/gcc/x86_64-linux-gnu/13/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include MyGLWidget.h -o moc_MyGLWidget.cpp
 
 compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
@@ -404,7 +426,12 @@ ui_MyForm.h: MyForm.ui \
 		/usr/lib/qt5/bin/uic \
 		MyGLWidget.h \
 		model.h \
-		BL2GLWidget.h
+		BL2GLWidget.h \
+		assimp/Mesh.h \
+		assimp/include/assimp/Importer.hpp \
+		assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/ogldev_texture.h
 	/usr/lib/qt5/bin/uic MyForm.ui -o ui_MyForm.h
 
 compiler_yacc_decl_make_all:
@@ -421,14 +448,24 @@ main.o: main.cpp MyForm.h \
 		ui_MyForm.h \
 		MyGLWidget.h \
 		model.h \
-		BL2GLWidget.h
+		BL2GLWidget.h \
+		assimp/Mesh.h \
+		assimp/include/assimp/Importer.hpp \
+		assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/ogldev_texture.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 MyForm.o: MyForm.cpp MyForm.h \
 		ui_MyForm.h \
 		MyGLWidget.h \
 		model.h \
-		BL2GLWidget.h
+		BL2GLWidget.h \
+		assimp/Mesh.h \
+		assimp/include/assimp/Importer.hpp \
+		assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/ogldev_texture.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o MyForm.o MyForm.cpp
 
 BL2GLWidget.o: BL2GLWidget.cpp BL2GLWidget.h
@@ -436,11 +473,40 @@ BL2GLWidget.o: BL2GLWidget.cpp BL2GLWidget.h
 
 MyGLWidget.o: MyGLWidget.cpp MyGLWidget.h \
 		model.h \
-		BL2GLWidget.h
+		BL2GLWidget.h \
+		assimp/Mesh.h \
+		assimp/include/assimp/Importer.hpp \
+		assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/ogldev_texture.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o MyGLWidget.o MyGLWidget.cpp
 
 model.o: model.cpp model.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o model.o model.cpp
+
+Mesh.o: assimp/Mesh.cpp assimp/Mesh.h \
+		assimp/include/assimp/Importer.hpp \
+		assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/ogldev_texture.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Mesh.o assimp/Mesh.cpp
+
+ogldev_texture.o: assimp/ogldev_texture.cpp assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/ogldev_texture.h \
+		assimp/3rdparty/stb_image.h \
+		assimp/3rdparty/stb_image_write.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ogldev_texture.o assimp/ogldev_texture.cpp
+
+ogldev_util.o: assimp/ogldev_util.cpp assimp/ogldev_util.h \
+		assimp/ogldev_types.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ogldev_util.o assimp/ogldev_util.cpp
+
+stb_image.o: assimp/3rdparty/stb_image.cpp assimp/ogldev_util.h \
+		assimp/ogldev_types.h \
+		assimp/3rdparty/stb_image.h \
+		assimp/3rdparty/stb_image_write.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o stb_image.o assimp/3rdparty/stb_image.cpp
 
 moc_MyForm.o: moc_MyForm.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_MyForm.o moc_MyForm.cpp

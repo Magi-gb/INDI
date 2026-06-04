@@ -37,6 +37,9 @@ class BL2GLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
     GLuint matspecLoc;
     GLuint matshinLoc;
 
+    //TEXTURAS
+    GLuint texUVLoc;
+
     // Uniform TG
     GLuint transLoc;
 

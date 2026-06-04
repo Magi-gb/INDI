@@ -7,10 +7,12 @@ in vec3 vMatamb;
 in vec3 vMatdiff;
 in vec3 vMatspec;
 in float vMatshin;
+in vec2 TexCoord;
 
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
+uniform sampler2D colorMap;
 
 //Llums nocturnes
 uniform bool nightMode;
@@ -28,6 +30,9 @@ void main() {
     // Normal normalizada
     vec3 norm = normalize(Normal);
 
+    //Texturas
+    vec3 texColor = texture(colorMap, TexCoord).rgb;
+
     // Direccion hacia la luz
     vec3 lightDir = normalize(lightPos - FragPos);
 
@@ -43,7 +48,7 @@ void main() {
 
     float diff = max(dot(norm, lightDir), 0.0);
 
-    vec3 diffuse = diff * lightColor * vMatdiff;
+    vec3 diffuse = diff * lightColor * vMatdiff * texColor;
 
     // =========================
     // SPECULAR

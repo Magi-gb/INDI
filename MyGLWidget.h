@@ -3,6 +3,7 @@
 
 #include "model.h"
 #include "BL2GLWidget.h"
+#include "assimp/Mesh.h"
 #include <QTimer>
 #include <QMouseEvent>
 
@@ -75,13 +76,16 @@ class MyGLWidget : public BL2GLWidget {
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1}
     };
 
-    Model morty, torre, moneda, fantasma;
+    Model morty, moneda, fantasma;
+    Mesh* wallMesh = nullptr;
+    Mesh* towerMesh = nullptr;
     GLuint VAO_Morty, VAO_Torre, VAO_Moneda, VAO_Fantasma;
 
     void creaBuffersMorty ();
     void creaBuffersTorre ();
     void creaBuffersMoneda ();
     void creaBuffersFantasma ();
+    void creaBuffersAssimp();
 
     void modelTransformMorty (int fila, int col);
     void modelTransformTorre (int fila, int col);
@@ -110,13 +114,19 @@ class MyGLWidget : public BL2GLWidget {
     float escalaMoneda;
     float escalaFantasma;
 
+    //Radio torre
+    float radioBaseTorre;
+
     glm::vec3 centreBaseMorty;
     glm::vec3 centreBaseTorre;
     glm::vec3 centreBaseMoneda;
     glm::vec3 centreBaseFantasma;
 
-    //Moviment Moneda
+    //CUB PER TEXTURES
+    float escalaWall;
+    glm::vec3 centreBaseWall;
 
+    //Moviment Moneda
     QTimer timer;
     float angleCoin = 0.0f;
 
@@ -207,7 +217,10 @@ class MyGLWidget : public BL2GLWidget {
     GLuint ghostLightColorLoc;
     GLuint coinLightPosLoc;
     GLuint coinLightDirLoc;
-    
+
+    //TEXTURAS
+    GLuint texUVLoc;
+    GLuint colorMapLoc;    
 };
 
 #endif
