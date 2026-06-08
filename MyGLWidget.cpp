@@ -21,9 +21,9 @@ MyGLWidget::~MyGLWidget() {}
 void MyGLWidget::initializeGL() {
     BL2GLWidget::initializeGL();
 
-    morty.load("Models3D/Morty.obj"); 
-    moneda.load("Models3D/Coin.obj");
-    fantasma.load("Models3D/Fantasma.obj");
+    morty.load("../Models3D/Morty.obj"); 
+    moneda.load("../Models3D/Coin.obj");
+    fantasma.load("../Models3D/Fantasma.obj");
 
     findMorty();
     findGhost();
@@ -1050,10 +1050,10 @@ void MyGLWidget::creaBuffersAssimp() {
     QOpenGLFunctions_3_3_Core* f = this; 
 
     wallMesh = new Mesh(f, vertexLoc, normalLoc, texUVLoc, matdiffLoc, matspecLoc, matambLoc, matshinLoc);
-    wallMesh->LoadMesh("Models3D/block.obj");
+    wallMesh->LoadMesh("../Models3D/block.obj");
 
     towerMesh = new Mesh(f, vertexLoc, normalLoc, texUVLoc, matdiffLoc, matspecLoc, matambLoc, matshinLoc);
-    towerMesh->LoadMesh("Models3D/tower.obj");
+    towerMesh->LoadMesh("../Models3D/tower.obj");
 }
 
 void MyGLWidget::modelTransformMorty(int fila, int col, bool minimap) {
