@@ -13,6 +13,7 @@ uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
 uniform sampler2D colorMap;
+uniform bool esSuelo; //Variable pel color del terra
 
 //Llums nocturnes
 uniform bool nightMode;
@@ -40,7 +41,7 @@ void main() {
     // AMBIENT
     // =========================
 
-    vec3 ambient = 0.2 * lightColor * vMatamb;
+    vec3 ambient = 0.6 * lightColor * vMatamb;
 
     // =========================
     // DIFFUSE
@@ -48,7 +49,10 @@ void main() {
 
     float diff = max(dot(norm, lightDir), 0.0);
 
-    vec3 diffuse = diff * lightColor * vMatdiff * texColor;
+    //Para que el suelo sea de otro color y se vea en el minimapa, de noche no es necesario
+    vec3 texFinal = esSuelo ? vec3(1.0, 0.0, 0.0) : texColor;
+
+    vec3 diffuse = esSuelo ? diff * lightColor * texFinal : 1.5 * diff * lightColor * vMatdiff * texFinal;
 
     // =========================
     // SPECULAR
@@ -95,7 +99,7 @@ void main() {
 
             float range = 1.0 / (1.0 + exp(4.0 * (dist - 4.0)));
 
-            coinDiffuse += diffCoin * focus * range * vec3(1.0, 0.85, 0.2);
+            coinDiffuse += diffCoin * focus * range * vec3(0.5, 0.42, 0.1);
         }
     }
 
@@ -111,10 +115,17 @@ void main() {
 
         float spot = max(dot(-lightDir2, normalize(flashlightDir)), 0.0);
 
-        if (spot > 0.9) {
+        if (spot > 0.8) {
             float diff2 = max(dot(norm, lightDir2), 0.0);
 
-            result += diff2 * vec3(1.0, 1.0, 0.0) * vMatdiff;
+            // Así no se ve un circulo artificial
+            float smoothSpot = smoothstep(0.8, 0.95, spot);
+
+            // Atenuacion por distancia
+            float dist2 = length(flashlightPos - FragPos);
+            float attenuation2 = 1.0 / (1.0 + 0.3 * dist2 + 0.1 * dist2 * dist2);
+
+            result += smoothSpot * diff2 * attenuation2 * vec3(1.0, 0.85, 0.0) * vMatdiff * texColor;
         }
 
         result += ghostDiffuse;

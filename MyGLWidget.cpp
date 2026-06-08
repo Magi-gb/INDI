@@ -43,15 +43,6 @@ void MyGLWidget::initializeGL() {
     escalaWall = 1.0f / maxSizeWall;
     centreBaseWall = glm::vec3(bbMinWall.x + bbSizeWall.x / 2.0f, bbMinWall.y, bbMinWall.z + bbSizeWall.z / 2.0f);
 
-    //TEXTURAS Y RESIZE DE LA TORRE
-    glm::vec3 bbMin  = towerMesh->GetBBMin();
-    glm::vec3 bbSize = towerMesh->GetBBSize();
-    float maxSize = std::max(bbSize.x, std::max(bbSize.y, bbSize.z));
-    escalaTorre = 6.0f / maxSize;
-    centreBaseTorre = glm::vec3(bbMin.x + bbSize.x / 2.0f, bbMin.y, bbMin.z + bbSize.z / 2.0f);
-
-    radioBaseTorre = (bbSize.z / 2.0f) * escalaTorre;
-
     calculaCapsaModel(
         morty,
         escalaMorty,
@@ -59,12 +50,13 @@ void MyGLWidget::initializeGL() {
         1.5f
     );
 
-    /*calculaCapsaModel(
-        torre,
-        escalaTorre,
-        centreBaseTorre,
-        6.0f
-    );*/
+    //TEXTURAS Y RESIZE DE LA TORRE
+    glm::vec3 bbMin  = towerMesh->GetBBMin();
+    glm::vec3 bbSize = towerMesh->GetBBSize();
+    float maxSize = std::max(bbSize.x, std::max(bbSize.y, bbSize.z));
+    escalaTorre = 6.0f / maxSize;
+    centreBaseTorre = glm::vec3(bbMin.x + bbSize.x / 2.0f, bbMin.y, bbMin.z + bbSize.z / 2.0f);
+    radioBaseTorre = (bbSize.z / 2.0f) * escalaTorre;
 
     calculaCapsaModel(
         moneda,
@@ -80,28 +72,32 @@ void MyGLWidget::initializeGL() {
         0.65f
     );
 
+    totalMonedes = 0;
+    for (int i = 0; i < N; i++)
+        for (int j = 0; j < M; j++)
+            if (laberint[i][j] == 5) totalMonedes++;
+    emit monedaRecollida(0, totalMonedes);
+
     glEnable(GL_DEPTH_TEST);
 }
 
 
 void MyGLWidget::paintGL() {
+    glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glViewport(0, 0, width(), height());
 
     projectTransform();
-
+    
     viewTransform();
-
+    
     sendLightUniforms();
-
+    
     renderScene();
 
-    glViewport(width() - width()/4, 0, width()/4, height()/4);
-
-    setupMiniMapCamera();
-
-    renderScene();
+    setupMiniMap();
 
     glBindVertexArray(0);
 }
@@ -122,14 +118,14 @@ void MyGLWidget::renderScene() {
 
                     glBindVertexArray(VAO_Morty);
 
-                    modelTransformMorty(i, j);
+                    modelTransformMorty(i, j, enMinimap);
 
                     glDrawArrays(GL_TRIANGLES, 0, morty.faces().size() * 3);
                 } else if (laberint[i][j] == 3) {
 
                     glBindVertexArray(VAO_Fantasma);
 
-                    modelTransformFantasma(i, j);
+                    modelTransformFantasma(i, j, enMinimap);
 
                     glDrawArrays(GL_TRIANGLES, 0, fantasma.faces().size() *3);
                 } else if (laberint[i][j] == 4) {
@@ -141,14 +137,18 @@ void MyGLWidget::renderScene() {
 
                     glBindVertexArray(VAO_Moneda);
 
-                    modelTransformMoneda(i, j);
+                    modelTransformMoneda(i, j, enMinimap);
 
                     glDrawArrays(GL_TRIANGLES, 0, moneda.faces().size() * 3);
                 }
             }
+            glUniform1i(esSuelLoc, true);
+            
             modelTransformCellT(i, j);
-
+            
             wallMesh->Render();
+            
+            glUniform1i(esSuelLoc, false);
         }
     }
 }
@@ -163,6 +163,29 @@ void MyGLWidget::setupMiniMapCamera() {
     projectTransformOrtho();
 
     viewTransformOrtho();
+}
+
+void MyGLWidget::setupMiniMap() {
+    float mapWidth  = maxEscena.x - minEscena.x;
+    float mapHeight = maxEscena.z - minEscena.z;
+    float ratio = mapWidth / mapHeight;
+
+    int minimapHeight = height() / 4;
+    int minimapWidth  = (int)(minimapHeight * ratio);
+
+    glViewport(width() - minimapWidth, 0, minimapWidth, minimapHeight);
+
+    glScissor(width() - minimapWidth, 0, minimapWidth, minimapHeight);
+    glEnable(GL_SCISSOR_TEST);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_SCISSOR_TEST);
+
+    setupMiniMapCamera();
+    
+    enMinimap = true;
+    renderScene();
+    enMinimap = false;
 }
 
 void MyGLWidget::sendLightUniforms() {
@@ -261,13 +284,10 @@ void MyGLWidget::carregaShaders() {
     BL2GLWidget::carregaShaders();
 
     PMLoc = glGetUniformLocation(program->programId(), "PM");
-
     VMLoc = glGetUniformLocation(program->programId(), "VM");
-
     TG_Loc = glGetUniformLocation(program->programId(), "TG");
 
     lightPosLoc = glGetUniformLocation(program->programId(), "lightPos");
-
     lightColorLoc = glGetUniformLocation(program->programId(), "lightColor");
 
     viewPosLoc = glGetUniformLocation(program->programId(), "viewPos");
@@ -275,20 +295,19 @@ void MyGLWidget::carregaShaders() {
     nightModeLoc = glGetUniformLocation(program->programId(), "nightMode");
 
     flashlightPosLoc = glGetUniformLocation(program->programId(), "flashlightPos");
-
     flashlightDirLoc = glGetUniformLocation(program->programId(), "flashlightDir");
 
     ghostLightPosLoc = glGetUniformLocation(program->programId(), "ghostLightPos");
-
     ghostLightColorLoc = glGetUniformLocation(program->programId(), "ghostLightColor");
 
     coinLightPosLoc = glGetUniformLocation(program->programId(), "coinLightPos");
-
     coinLightDirLoc = glGetUniformLocation(program->programId(), "coinLightDir");
 
     texUVLoc = glGetAttribLocation(program->programId(), "texCoord");
     
     colorMapLoc = glGetUniformLocation(program->programId(), "colorMap");
+
+    esSuelLoc = glGetUniformLocation(program->programId(), "esSuelo");
 }
 
 void MyGLWidget::initCamera() {
@@ -349,6 +368,7 @@ void MyGLWidget::viewTransform() {
 
     VM = glm::lookAt(obsPerspectiva, vrpPerspectiva, glm::vec3(0,1,0));
 
+    emit cameraChanged((int)glm::degrees(angleY), (int)glm::degrees(angleX), (int)((1.0f - (distCamera - radioEscena) / (radioEscena * 2.0f)) * 100.0f));
     } else {
 
         // Posicion de la cabeza de Morty
@@ -388,13 +408,13 @@ void MyGLWidget::viewTransform() {
 
 //Las dos funciones para proyectar la vista ortogonal
 void MyGLWidget::projectTransformOrtho() {
+    float mapWidth  = maxEscena.x - minEscena.x;
+    float mapHeight = maxEscena.z - minEscena.z;
 
-    float ample = maxEscena.x - minEscena.x;
-    float profunditat = maxEscena.z - minEscena.z;
+    float halfW = mapWidth  / 2.0f;
+    float halfH = mapHeight / 2.0f;
 
-    float size = std::max(ample, profunditat) / 2.0f;
-
-    PM = glm::ortho(-size, size, -size, size, 0.1f, 4.0f * radioEscena);
+    PM = glm::ortho(-halfW, halfW, -halfH, halfH, 0.1f, 4.0f * radioEscena);
 
     glUniformMatrix4fv(PMLoc, 1, GL_FALSE, &PM[0][0]);
 }
@@ -411,6 +431,7 @@ void MyGLWidget::viewTransformOrtho() {
 }
 
 void MyGLWidget::keyPressEvent(QKeyEvent *event) {
+    if (!gameStarted) return;
 
     makeCurrent();
 
@@ -426,6 +447,29 @@ void MyGLWidget::keyPressEvent(QKeyEvent *event) {
             cameraFPS = !cameraFPS;
             projectTransform();
             viewTransform();
+            break;
+        
+        case Qt::Key_Plus:
+            if (!cameraFPS) {
+                distCamera -= 1.0f;
+                
+                if (distCamera < radioEscena) distCamera = radioEscena;
+                
+                obsPerspectiva = centroEscena + glm::normalize(obsPerspectiva - centroEscena) * distCamera;
+                
+                projectTransform();
+                viewTransform();
+            }
+            break;
+
+        case Qt::Key_Minus:
+            if (!cameraFPS) {
+                distCamera += 1.0f;
+                
+                obsPerspectiva = centroEscena + glm::normalize(obsPerspectiva - centroEscena) * distCamera;
+            projectTransform();
+            viewTransform(); 
+            }
             break;
 
     // ===================================
@@ -457,12 +501,11 @@ void MyGLWidget::keyPressEvent(QKeyEvent *event) {
     // ===================================
 
         case Qt::Key_O:
-            angleSol += glm::radians(5.0f);
+            angleSol = std::min(angleSol + glm::radians(5.0f), glm::radians(180.0f));
             updateLightPosition();
             break;
-
         case Qt::Key_P:
-            angleSol -= glm::radians(5.0f);
+            angleSol = std::max(angleSol - glm::radians(5.0f), glm::radians(0.0f));
             updateLightPosition();
             break;
         case Qt::Key_N:
@@ -490,7 +533,6 @@ void MyGLWidget::mousePressEvent(QMouseEvent *e) {
     if (e->button() == Qt::LeftButton) {
 
         rotating = true;
-
         xClick = e->x();
         yClick = e->y();
     }
@@ -499,87 +541,77 @@ void MyGLWidget::mousePressEvent(QMouseEvent *e) {
     if (e->button() == Qt::RightButton) {
 
         zooming = true;
-
         yClick = e->y();
     }
 }
 
 void MyGLWidget::mouseReleaseEvent(QMouseEvent *e) {
 
-    if (e->button() == Qt::LeftButton) {
+    if (e->button() == Qt::LeftButton) rotating = false;
 
-        rotating = false;
-    }
-
-    if (e->button() == Qt::RightButton) {
-
-        zooming = false;
-    }
+    if (e->button() == Qt::RightButton) zooming = false;
 }
 
 void MyGLWidget::mouseMoveEvent(QMouseEvent *e) {
 
     if (rotating && !cameraFPS) {
 
-    angleY += (e->x() - xClick) * 0.01f;
+        angleY += (e->x() - xClick) * 0.01f;
 
-    angleX += (e->y() - yClick) * 0.01f;
+        angleX += (e->y() - yClick) * 0.01f;
 
-    xClick = e->x();
-    yClick = e->y();
+        xClick = e->x();
+        yClick = e->y();
 
-    // Direccion inicial de la camara
-    glm::vec3 dir(0.0f, 1.0f, 1.0f);
+        // Direccion inicial de la camara
+        glm::vec3 dir(0.0f, 1.0f, 1.0f);
 
-    // Matriz de rotacion Euler
-    glm::mat4 R(1.0f);
+        // Matriz de rotacion Euler
+        glm::mat4 R(1.0f);
 
-    R = glm::rotate(R, angleY, glm::vec3(0,1,0));
+        R = glm::rotate(R, angleY, glm::vec3(0,1,0));
 
-    R = glm::rotate(R, angleX, glm::vec3(1,0,0));
+        R = glm::rotate(R, angleX, glm::vec3(1,0,0));
 
-    // Rotar direccion
-    dir = glm::vec3(R * glm::vec4(dir, 0.0f));
+        // Rotar direccion
+        dir = glm::vec3(R * glm::vec4(dir, 0.0f));
 
-    dir = glm::normalize(dir);
+        dir = glm::normalize(dir);
 
-    // Orbitar alrededor del centro del mapa
-    obsPerspectiva = centroEscena + dir * distCamera;
+        // Orbitar alrededor del centro del mapa
+        obsPerspectiva = centroEscena + dir * distCamera;
 
-    vrpPerspectiva = centroEscena;
+        vrpPerspectiva = centroEscena;
 
-    viewTransform();
+        viewTransform();
 
-    update();
+        update();
     }
 
     if (zooming && !cameraFPS) {
 
-    float dy = e->y() - yClick;
+        float dy = e->y() - yClick;
 
-    distCamera += dy * 0.05f;
+        distCamera += dy * 0.05f;
 
-    if (distCamera < radioEscena)
-        distCamera = radioEscena;
+        if (distCamera < radioEscena) distCamera = radioEscena;
 
-    glm::vec3 dirCamera(0.0f, 1.0f, 1.0f);
+        glm::vec3 dirCamera(0.0f, 1.0f, 1.0f);
 
-    dirCamera = glm::normalize(dirCamera);
+        dirCamera = glm::normalize(dirCamera);
 
-    obsPerspectiva = centroEscena +
-                     dirCamera * distCamera;
+        obsPerspectiva = centroEscena + dirCamera * distCamera;
 
-    yClick = e->y();
+        yClick = e->y();
 
-    projectTransform();
-    viewTransform();
+        projectTransform();
+        viewTransform();
 
-    update();
+        update();
     }
 }
 
 void MyGLWidget::findMorty() {
-
     for (int i = 0; i < N; i++) {
 
         for (int j = 0; j < M; j++) {
@@ -614,8 +646,7 @@ bool MyGLWidget::casellaLliure(int fila, int col) const {
     if (fila < 0 || fila >= N) return false;
     if (col < 0 || col >= M) return false;
 
-    return (laberint[fila][col] != 1 &&
-            laberint[fila][col] != 4);
+    return (laberint[fila][col] != 1 && laberint[fila][col] != 4);
 }
 
 std::vector<int> MyGLWidget::direccionsPossiblesFantasma() const {
@@ -630,10 +661,8 @@ std::vector<int> MyGLWidget::direccionsPossiblesFantasma() const {
         int f = fantasmaFila + df[d];
         int c = fantasmaCol + dc[d];
 
-        if (casellaLliure(f, c))
-            dirs.push_back(d);
+        if (casellaLliure(f, c)) dirs.push_back(d);
     }
-
     return dirs;
 }
 
@@ -641,37 +670,37 @@ void MyGLWidget::moveMorty(int df, int dc) {
     int novaFila = mortyFila + df;
     int novaCol = mortyCol + dc;
 
-    // Evitar salirnos de la matriz
-    if (novaFila < 0 || novaFila >= N || novaCol < 0 || novaCol >= M) {
+    if (novaFila < 0 || novaFila >= N || novaCol < 0 || novaCol >= M)
         return;
-    }
 
-    // No puede atravesar paredes
-    if (laberint[novaFila][novaCol] == 1) {
+    if (laberint[novaFila][novaCol] == 1)
         return;
-    }
 
-    // Si quieres impedir que entre en torres, deja esto
     if (laberint[novaFila][novaCol] == 4) {
+        if (monedesRecollides == totalMonedes) {
+            emit victoriaAconseguida();
+        }
+        return;
+    }   
+
+    // Detectar colision con fantasma
+    if (novaFila == fantasmaFila && novaCol == fantasmaCol) {
+        emit gameOver();
         return;
     }
 
-    // Si pisa una moneda, aquí podrías sumar puntos
     if (laberint[novaFila][novaCol] == 5) {
-        std::cout << "Moneda recogida!" << std::endl;
+        monedesRecollides++;
+        emit monedaRecollida(monedesRecollides, totalMonedes);
     }
 
-    // Actualizar matriz
     laberint[mortyFila][mortyCol] = 0;
     laberint[novaFila][novaCol] = 2;
-
-    // Actualizar posición lógica
     mortyFila = novaFila;
     mortyCol = novaCol;
 }
 
 void MyGLWidget::moveFantasma(int df, int dc) {
-
     int novaFila = fantasmaFila + df;
     int novaCol = fantasmaCol + dc;
 
@@ -685,10 +714,14 @@ void MyGLWidget::moveFantasma(int df, int dc) {
     if (laberint[novaFila][novaCol] == 4)
         return;
 
-    if (laberint[novaFila][novaCol] == 5)
-        return; // opcional
+    // Detectar colision ANTES de mover
+    if (novaFila == mortyFila && novaCol == mortyCol) {
+        emit gameOver();
+        return;
+    }
 
-    laberint[fantasmaFila][fantasmaCol] = 0;
+    laberint[fantasmaFila][fantasmaCol] = celdaDebajofantasma;
+    celdaDebajofantasma = laberint[novaFila][novaCol];
     laberint[novaFila][novaCol] = 3;
 
     fantasmaFila = novaFila;
@@ -740,24 +773,29 @@ void MyGLWidget::mouMortyEnrere() {
 }
 
 void MyGLWidget::mouFantasma() {
-
     auto dirs = direccionsPossiblesFantasma();
 
+    if (dirs.empty()) return;
+
     glm::ivec2 dirActual = direccioFantasma();
+    bool bloquejat = !casellaLliure(fantasmaFila + dirActual.x, fantasmaCol + dirActual.y);
 
-    bool bloquejat = !casellaLliure(fantasmaFila + dirActual.x, fantasmaCol  + dirActual.y);
+    int dirContraria = (dirFantasma + 2) % 4;
 
-    bool interseccio = dirs.size() > 2;
+    // Filtrar la dirección contraria si hay más opciones
+    std::vector<int> dirsSinRetroceso;
+    for (int d : dirs) {
+        if (d != dirContraria) dirsSinRetroceso.push_back(d);
+    }
 
-    if (bloquejat || interseccio) {
-
-        int idx = rand() % dirs.size();
-
-        dirFantasma = dirs[idx];
+    // Si está bloqueado o llega a una intersección, elige nueva dirección
+    if (bloquejat || dirs.size() > 1) {
+        std::vector<int>& opcions = dirsSinRetroceso.empty() ? dirs : dirsSinRetroceso;
+        int idx = rand() % opcions.size();
+        dirFantasma = opcions[idx];
     }
 
     glm::ivec2 dir = direccioFantasma();
-
     moveFantasma(dir.x, dir.y);
 }
 
@@ -916,30 +954,32 @@ void MyGLWidget::modelTransformCellT(int fila, int col) {
 }
 
 void MyGLWidget::creaBuffersMorty() {
-
     glGenVertexArrays(1, &VAO_Morty);
     glBindVertexArray(VAO_Morty);
 
-    GLuint VBO[3];
-    glGenBuffers(3, VBO);
+    GLuint VBO[4];
+    glGenBuffers(4, VBO);
 
-    // Vertices
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3 * 3, morty.VBO_vertices(), GL_STATIC_DRAW);
     glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(vertexLoc);
 
-    // Material diffuse
     glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3 * 3, morty.VBO_matdiff(), GL_STATIC_DRAW);
-    glVertexAttribPointer( matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(matdiffLoc);
 
-    // Normales
     glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3 * 3, morty.VBO_normals(), GL_STATIC_DRAW);
     glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(normalLoc);
+
+    // AÑADE ambient
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[3]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * morty.faces().size() * 3 * 3, morty.VBO_matamb(), GL_STATIC_DRAW);
+    glVertexAttribPointer(matambLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(matambLoc);
 
     glBindVertexArray(0);
 }
@@ -948,16 +988,16 @@ void MyGLWidget::creaBuffersMoneda() {
     glGenVertexArrays(1, &VAO_Moneda);
     glBindVertexArray(VAO_Moneda);
 
-    GLuint VBO[3];
-    glGenBuffers(3, VBO);
+    GLuint VBO[4];
+    glGenBuffers(4, VBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * moneda.faces().size() * 3*3, moneda.VBO_vertices(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * moneda.faces().size() * 3 * 3, moneda.VBO_vertices(), GL_STATIC_DRAW);
     glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(vertexLoc);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  moneda.faces().size() * 3*3, moneda.VBO_matdiff(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * moneda.faces().size() * 3 * 3, moneda.VBO_matdiff(), GL_STATIC_DRAW);
     glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(matdiffLoc);
 
@@ -966,6 +1006,12 @@ void MyGLWidget::creaBuffersMoneda() {
     glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(normalLoc);
 
+    // AÑADE ambient
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[3]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * moneda.faces().size() * 3 * 3, moneda.VBO_matamb(), GL_STATIC_DRAW);
+    glVertexAttribPointer(matambLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(matambLoc);
+
     glBindVertexArray(0);
 }
 
@@ -973,16 +1019,16 @@ void MyGLWidget::creaBuffersFantasma() {
     glGenVertexArrays(1, &VAO_Fantasma);
     glBindVertexArray(VAO_Fantasma);
 
-    GLuint VBO[3];
-    glGenBuffers(3, VBO);
+    GLuint VBO[4];
+    glGenBuffers(4, VBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fantasma.faces().size() * 3*3, fantasma.VBO_vertices(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fantasma.faces().size() * 3 * 3, fantasma.VBO_vertices(), GL_STATIC_DRAW);
     glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(vertexLoc);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  fantasma.faces().size() * 3*3, fantasma.VBO_matdiff(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fantasma.faces().size() * 3 * 3, fantasma.VBO_matdiff(), GL_STATIC_DRAW);
     glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(matdiffLoc);
 
@@ -991,11 +1037,17 @@ void MyGLWidget::creaBuffersFantasma() {
     glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(normalLoc);
 
+    // AÑADE ambient
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[3]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * fantasma.faces().size() * 3 * 3, fantasma.VBO_matamb(), GL_STATIC_DRAW);
+    glVertexAttribPointer(matambLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(matambLoc);
+
     glBindVertexArray(0);
 }
 
 void MyGLWidget::creaBuffersAssimp() {
-    QOpenGLFunctions_3_3_Core* f = this;  // cast explícito
+    QOpenGLFunctions_3_3_Core* f = this; 
 
     wallMesh = new Mesh(f, vertexLoc, normalLoc, texUVLoc, matdiffLoc, matspecLoc, matambLoc, matshinLoc);
     wallMesh->LoadMesh("../Models3D/block.obj");
@@ -1004,7 +1056,7 @@ void MyGLWidget::creaBuffersAssimp() {
     towerMesh->LoadMesh("../Models3D/tower.obj");
 }
 
-void MyGLWidget::modelTransformMorty(int fila, int col) {
+void MyGLWidget::modelTransformMorty(int fila, int col, bool minimap) {
     glm::mat4 TG(1.0f);
 
     TG = glm::translate(TG, glm::vec3(col, 0.0f, fila));
@@ -1013,6 +1065,9 @@ void MyGLWidget::modelTransformMorty(int fila, int col) {
 
     TG = glm::rotate(TG, glm::radians(angleFromDirMorty()), glm::vec3(0, 1, 0));
 
+    //Para que el morty sea apreciable más facimente
+    if (minimap) TG = glm::scale(TG, glm::vec3(3.0f));
+
     TG = glm::scale(TG, glm::vec3(escalaMorty));
 
     TG = glm::translate(TG, -centreBaseMorty);
@@ -1020,13 +1075,15 @@ void MyGLWidget::modelTransformMorty(int fila, int col) {
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }
 
-void MyGLWidget::modelTransformMoneda(int fila, int col) {
-
+void MyGLWidget::modelTransformMoneda(int fila, int col, bool minimap) {
     glm::mat4 TG(1.0f);
 
-    TG = glm::translate( TG, glm::vec3(col + 0.5f, 0.5f, fila + 0.5f));
+    TG = glm::translate(TG, glm::vec3(col + 0.5f, 0.5f, fila + 0.5f));
 
-    TG = glm::rotate( TG, glm::radians(angleCoin), glm::vec3(0,1,0));
+    TG = glm::rotate(TG, glm::radians(angleCoin), glm::vec3(0, 1, 0));
+
+    if (minimap) TG = glm::rotate(TG, glm::radians(90.0f), glm::vec3(1, 0, 0));
+    if (minimap) TG = glm::scale(TG, glm::vec3(2.0f));
 
     TG = glm::scale(TG, glm::vec3(escalaMoneda));
 
@@ -1061,11 +1118,22 @@ void MyGLWidget::modelTransformTorre(int fila, int col) {
     glUniformMatrix4fv(TG_Loc, 1, GL_FALSE, &TG[0][0]);
 }
 
-void MyGLWidget::modelTransformFantasma(int fila, int col) {
-
+void MyGLWidget::modelTransformFantasma(int fila, int col, bool minimap) {
     glm::mat4 TG(1.0f);
 
-    TG = glm::translate( TG, glm::vec3(col + 0.5f, 0.0f, fila + 0.5f));
+    TG = glm::translate(TG, glm::vec3(col + 0.5f, 0.0f, fila + 0.5f));
+
+    // Rotación según dirección del fantasma
+    float angle = 0.0f;
+    switch (dirFantasma) {
+        case 0: angle = 180.0f; break; // Norte
+        case 1: angle =  90.0f; break; // Este
+        case 2: angle =   0.0f; break; // Sur
+        case 3: angle = -90.0f; break; // Oeste
+    }
+    TG = glm::rotate(TG, glm::radians(angle), glm::vec3(0, 1, 0));
+
+    if (minimap) TG = glm::scale(TG, glm::vec3(2.5f));
 
     TG = glm::scale(TG, glm::vec3(escalaFantasma));
 
@@ -1078,4 +1146,98 @@ void MyGLWidget::updateLightPosition() {
     lightPos.x = centroEscena.x + radioEscena * cos(angleSol);
     lightPos.y = centroEscena.y + radioEscena * sin(angleSol);
     lightPos.z = centroEscena.z;
+}
+
+void MyGLWidget::resetGame() {
+    // Resetear laberinto original
+    int laberintInicial[N][M] = {
+        {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1},
+        {1,0,5,0,1,5,0,1,0,0,0,1,0,2,1},
+        {1,0,1,0,0,1,0,1,0,1,5,0,0,0,1},
+        {1,0,1,1,0,5,0,1,0,1,0,1,1,0,4},
+        {1,0,1,0,1,1,0,0,0,1,0,0,0,0,1},
+        {1,0,5,0,1,0,3,0,1,1,1,1,5,1,1},
+        {1,0,1,0,0,0,1,0,5,0,0,0,0,0,1},
+        {4,0,1,1,1,0,1,0,1,1,0,1,1,0,1},
+        {1,0,0,0,1,5,1,0,5,1,0,1,5,0,1},
+        {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1}
+    };
+    memcpy(laberint, laberintInicial, sizeof(laberint));
+
+    monedesRecollides = 0;
+    dirMorty = 2;        // dirección inicial
+    dirFantasma = 1;     // dirección inicial
+    celdaDebajofantasma = 0;  // resetear celda debajo del fantasma
+
+    findMorty();
+    findGhost();
+    initCamera();
+    emit monedaRecollida(0, totalMonedes);
+    update();
+}
+
+//////////////////////////////////////////////////////////////
+//INTERFICIE DE USUARIO
+//////////////////////////////////////////////////////////////
+void MyGLWidget::setGameStarted(bool started) {
+    gameStarted = started;
+}
+
+void MyGLWidget::setPsi(int value) {
+    angleY = glm::radians((float)value);
+    glm::mat4 R(1.0f);
+    R = glm::rotate(R, angleY, glm::vec3(0,1,0));
+    R = glm::rotate(R, angleX, glm::vec3(1,0,0));
+    glm::vec3 dir = glm::vec3(R * glm::vec4(0.0f, 1.0f, 1.0f, 0.0f));
+    dir = glm::normalize(dir);
+    obsPerspectiva = centroEscena + dir * distCamera;
+    viewTransform();
+    update();
+}
+
+void MyGLWidget::setTheta(int value) {
+    angleX = glm::radians((float)value);
+    glm::mat4 R(1.0f);
+    R = glm::rotate(R, angleY, glm::vec3(0,1,0));
+    R = glm::rotate(R, angleX, glm::vec3(1,0,0));
+    glm::vec3 dir = glm::vec3(R * glm::vec4(0.0f, 1.0f, 1.0f, 0.0f));
+    dir = glm::normalize(dir);
+    obsPerspectiva = centroEscena + dir * distCamera;
+    viewTransform();
+    update();
+}
+
+void MyGLWidget::setZoom(int value) {
+    // value va de 0 a 100, mapeamos a distancia de camara
+    float minDist = radioEscena;
+    float maxDist = radioEscena * 3.0f;
+    distCamera = minDist + (maxDist - minDist) * (1.0f - value / 100.0f);
+    obsPerspectiva = centroEscena + glm::normalize(obsPerspectiva - centroEscena) * distCamera;
+    projectTransform();
+    viewTransform();
+    update();
+}
+
+void MyGLWidget::toggleCamera() {
+    cameraFPS = !cameraFPS;
+    projectTransform();
+    viewTransform();
+    update();
+}
+
+bool MyGLWidget::isCameraFPS() {
+    return cameraFPS;
+}
+
+void MyGLWidget::setRotateCoins(bool rotate) {
+    coinsRotating = rotate;
+    if (rotate)
+        timer.start(16);
+    else
+        timer.stop();
+}
+
+void MyGLWidget::setLightColor(float r, float g, float b) {
+    lightColor = glm::vec3(r, g, b);
+    update();
 }

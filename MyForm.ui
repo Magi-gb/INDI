@@ -31,34 +31,152 @@
     </widget>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <spacer name="verticalSpacer">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButton">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>&amp;Sortir</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QWidget" name="sidePanel">
+     <property name="maximumWidth">
+      <number>200</number>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="spacing">
+       <number>8</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="coinsLabel">
+        <property name="text">
+         <string>0/0 coins</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="psiLabel">
+        <property name="text">
+         <string>Rotació horitzontal (Psi)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="psiSlider">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="minimum">
+         <number>-180</number>
+        </property>
+        <property name="maximum">
+         <number>180</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="thetaLabel">
+        <property name="text">
+         <string>Rotació vertical (Theta)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="thetaSlider">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="minimum">
+         <number>-90</number>
+        </property>
+        <property name="maximum">
+         <number>90</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="zoomLabel">
+        <property name="text">
+         <string>Zoom</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="zoomSlider">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="minimum">
+         <number>0</number>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="cameraButton">
+        <property name="text">
+         <string>Càmera FPS</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="rotateCoinsButton">
+        <property name="text">
+         <string>Rotar monedes: ON</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="lightColorButton">
+        <property name="text">
+         <string>Color llum solar</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="legendLabel">
+        <property name="text">
+         <string>— MOVIMENT —
+W/↑ Endavant
+S/↓ Enrere
+A/← Girar esquerra
+D/→ Girar dreta
+
+— CÀMERA —
+C Canviar càmera
++/- Zoom
+
+— LLUM —
+O/P Rotar sol
+N Mode nocturn</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>&amp;Sortir</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

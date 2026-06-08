@@ -1,8 +1,7 @@
 TEMPLATE    = app
 QT         += opengl 
 
-INCLUDEPATH += /usr/include/glm
-
+INCLUDEPATH += $$PWD/glm
 INCLUDEPATH += $$PWD/assimp
 
 QMAKE_CXXFLAGS += -isystem $$PWD/assimp/include

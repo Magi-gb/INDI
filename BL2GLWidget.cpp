@@ -207,7 +207,7 @@ void BL2GLWidget::creaBuffersCub ()
   // inicialitzem el material del cub
   glm::vec3 amb, diff, spec;
   float shin;
-  amb = glm::vec3(0.1,0.0,0.0);
+  amb = glm::vec3(0.3,0.3,0.3);
   diff = glm::vec3(0.6,0.5,0.5);
   spec = glm::vec3(0.6,0.6,0.6);
   shin = 100;

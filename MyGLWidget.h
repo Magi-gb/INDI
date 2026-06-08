@@ -13,11 +13,38 @@ class MyGLWidget : public BL2GLWidget {
   public:
     MyGLWidget(QWidget *parent=0);
     ~MyGLWidget();
-  
+
+    //UI
+    void setGameStarted(bool started);
+    void resetGame();
+    void setPsi(int value);
+    void setTheta(int value);
+    void setZoom(int value);
+    void toggleCamera();
+    bool isCameraFPS();
+    void setRotateCoins(bool rotate);
+    void setLightColor(float r, float g, float b);
+
   public slots:
     void rotateCoins();
 
+    //////////////////////////////////////////////
+    //UI
+    /////////////////////////////////////////////
+  signals:
+    void monedaRecollida(int collected, int total);
+    void victoriaAconseguida();
+    void gameOver();
+    void cameraChanged(int psi, int theta, int zoom);
+
+  private:
+    glm::vec3 flashlightColor = glm::vec3(1.0f, 0.85f, 0.0f);
+
   protected:
+    bool gameStarted = false;
+
+    ////////////////////////////////////////////
+
     // Inicialización del contexto OpenGL
     void initializeGL() override;
 
@@ -87,15 +114,16 @@ class MyGLWidget : public BL2GLWidget {
     void creaBuffersFantasma ();
     void creaBuffersAssimp();
 
-    void modelTransformMorty (int fila, int col);
+    void modelTransformMorty (int fila, int col, bool minimap = false);
     void modelTransformTorre (int fila, int col);
-    void modelTransformMoneda (int fila, int col);
-    void modelTransformFantasma (int fila, int col);
+    void modelTransformMoneda(int fila, int col, bool minimap = false);
+    void modelTransformFantasma (int fila, int col, bool minimap = false);
 
     // FUNCIONS RESUMS
     void sendLightUniforms();
     void renderScene();
     void setupMiniMapCamera();
+    void setupMiniMap();
 
     void resizeGL(int w, int h) override;
 
@@ -129,6 +157,9 @@ class MyGLWidget : public BL2GLWidget {
     //Moviment Moneda
     QTimer timer;
     float angleCoin = 0.0f;
+    int monedesRecollides = 0;
+    int totalMonedes = 0;
+    bool coinsRotating = true;
 
     //Moviment Morty
     void moveMorty(int df, int dc);
@@ -188,13 +219,16 @@ class MyGLWidget : public BL2GLWidget {
     int fantasmaFila;
     int fantasmaCol;
     int dirFantasma;
+    //Para que no se coma las monedas
+    int celdaDebajofantasma = 0;
 
     // Direccion de Morty
     float angleMorty = -90.0f;
-
     int dirMorty = 2;
-
     glm::vec3 direccioMiradaMorty() const;
+
+    //Cambios para minimapa
+    bool enMinimap = false;
 
     //LUZ
     void updateLightPosition();
