@@ -90,7 +90,6 @@ void BL2GLWidget::carregaShaders()
   texUVLoc = glGetAttribLocation(program->programId(), "texCoord");
 }
 
-
 int BL2GLWidget::printOglError(const char file[], int line, const char func[])
 {
     GLenum glErr;
