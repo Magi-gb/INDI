@@ -6,23 +6,32 @@ in vec3 matamb;
 in vec3 matdiff;
 in vec3 matspec;
 in float matshin;
+in vec2 texCoord;
 
 uniform mat4 TG;
 uniform mat4 PM;
 uniform mat4 VM;
 
-out vec3 vNormal;
+out vec3 FragPos;
+out vec3 Normal;
+
 out vec3 vMatamb;
 out vec3 vMatdiff;
 out vec3 vMatspec;
 out float vMatshin;
+out vec2 TexCoord;
 
 void main() {
-    vNormal = normal;
+
+    FragPos = vec3(TG * vec4(vertex, 1.0));
+
+    Normal = normalize(mat3(transpose(inverse(TG))) * normal);
+
     vMatamb = matamb;
     vMatdiff = matdiff;
     vMatspec = matspec;
     vMatshin = matshin;
+    TexCoord = texCoord;
 
     gl_Position = PM * VM * TG * vec4(vertex, 1.0);
 }
