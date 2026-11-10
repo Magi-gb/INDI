@@ -3,6 +3,7 @@
 
 #include "model.h"
 #include "BL2GLWidget.h"
+#include "assimp/Mesh.h"
 #include <QTimer>
 #include <QMouseEvent>
 
@@ -12,11 +13,38 @@ class MyGLWidget : public BL2GLWidget {
   public:
     MyGLWidget(QWidget *parent=0);
     ~MyGLWidget();
-  
+
+    //UI
+    void setGameStarted(bool started);
+    void resetGame();
+    void setPsi(int value);
+    void setTheta(int value);
+    void setZoom(int value);
+    void toggleCamera();
+    bool isCameraFPS();
+    void setRotateCoins(bool rotate);
+    void setLightColor(float r, float g, float b);
+
   public slots:
     void rotateCoins();
 
+    //////////////////////////////////////////////
+    //UI
+    /////////////////////////////////////////////
+  signals:
+    void monedaRecollida(int collected, int total);
+    void victoriaAconseguida();
+    void gameOver();
+    void cameraChanged(int psi, int theta, int zoom);
+
+  private:
+    glm::vec3 flashlightColor = glm::vec3(1.0f, 0.85f, 0.0f);
+
   protected:
+    bool gameStarted = false;
+
+    ////////////////////////////////////////////
+
     // Inicialización del contexto OpenGL
     void initializeGL() override;
 
@@ -64,35 +92,40 @@ class MyGLWidget : public BL2GLWidget {
     // Matriz del laberinto
     int laberint[N][M] = {
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1},
-      {1,0,0,0,5,0,0,0,0,0,0,0,0,0,1},
-      {1,1,1,1,0,1,1,1,0,1,1,1,1,0,1},
-      {1,0,0,5,0,0,0,1,0,0,0,1,0,0,4},
-      {1,1,1,0,1,1,5,1,1,1,0,1,0,0,1},
-      {1,0,0,5,0,1,0,0,0,1,0,1,1,5,1},
-      {1,1,1,1,0,1,1,0,0,1,0,1,0,0,1},
-      {4,0,1,0,0,0,1,1,5,1,0,1,1,0,1},
-      {1,0,0,0,1,0,1,0,0,1,0,0,0,2,1},
+      {1,0,5,0,1,5,0,1,0,0,0,1,0,2,1},
+      {1,0,1,0,0,1,0,1,0,1,5,0,0,0,1},
+      {1,0,1,1,0,5,0,1,0,1,0,1,1,0,4},
+      {1,0,1,0,1,1,0,0,0,1,0,0,0,0,1},
+      {1,0,5,0,1,0,3,0,1,1,1,1,5,1,1},
+      {1,0,1,0,0,0,1,0,5,0,0,0,0,0,1},
+      {4,0,1,1,1,0,1,0,1,1,0,1,1,0,1},
+      {1,0,0,0,1,5,1,0,5,1,0,1,5,0,1},
       {1,1,1,1,1,1,1,1,1,1,4,1,1,1,1}
     };
 
-    Model morty, torre, moneda;
-    GLuint VAO_Morty, VAO_Torre, VAO_Moneda;
+    Model morty, moneda, fantasma;
+    Mesh* wallMesh = nullptr;
+    Mesh* towerMesh = nullptr;
+    GLuint VAO_Morty, VAO_Torre, VAO_Moneda, VAO_Fantasma;
 
     void creaBuffersMorty ();
-
     void creaBuffersTorre ();
-
     void creaBuffersMoneda ();
+    void creaBuffersFantasma ();
+    void creaBuffersAssimp();
 
-    void modelTransformMorty (int fila, int col);
-
+    void modelTransformMorty (int fila, int col, bool minimap = false);
     void modelTransformTorre (int fila, int col);
+    void modelTransformMoneda(int fila, int col, bool minimap = false);
+    void modelTransformFantasma (int fila, int col, bool minimap = false);
 
-    void modelTransformMoneda (int fila, int col);
+    // FUNCIONS RESUMS
+    void sendLightUniforms();
+    void renderScene();
+    void setupMiniMapCamera();
+    void setupMiniMap();
 
     void resizeGL(int w, int h) override;
-
-    void moveMorty(int df, int dc);
 
     //Escalas models
     void calculaCapsaModel(
@@ -105,26 +138,43 @@ class MyGLWidget : public BL2GLWidget {
     void calculaCapsaEscena();
 
     float escalaMorty;
-    glm::vec3 centreBaseMorty;
-
     float escalaTorre;
-    glm::vec3 centreBaseTorre;
-
     float escalaMoneda;
+    float escalaFantasma;
+
+    //Radio torre
+    float radioBaseTorre;
+
+    glm::vec3 centreBaseMorty;
+    glm::vec3 centreBaseTorre;
     glm::vec3 centreBaseMoneda;
+    glm::vec3 centreBaseFantasma;
+
+    //CUB PER TEXTURES
+    float escalaWall;
+    glm::vec3 centreBaseWall;
 
     //Moviment Moneda
-
     QTimer timer;
     float angleCoin = 0.0f;
+    int monedesRecollides = 0;
+    int totalMonedes = 0;
+    bool coinsRotating = true;
 
     //Moviment Morty
-
+    void moveMorty(int df, int dc);
     void mouMortyEndavant();
     void mouMortyEnrere();
     void giraMortyEsquerra();
     void giraMortyDreta();
     float angleFromDirMorty() const;
+
+    //Moviment Fantasma
+    void moveFantasma(int df, int dc);
+    void mouFantasma();
+    std::vector<int> direccionsPossiblesFantasma() const;
+    bool casellaLliure(int fila, int col) const;
+    glm::ivec2 direccioFantasma() const;
 
     glm::vec3 minEscena;
     glm::vec3 maxEscena;
@@ -146,7 +196,6 @@ class MyGLWidget : public BL2GLWidget {
     bool zooming = false;
 
         //Otros
-
     bool cameraFPS = false;
 
     glm::vec3 obsPerspectiva;
@@ -154,6 +203,8 @@ class MyGLWidget : public BL2GLWidget {
 
     glm::vec3 obsFPS;
     glm::vec3 vrpFPS;
+
+    glm::vec3 OBSOrto;
 
     float fovPerspectiva;
     float fovFPS;
@@ -163,15 +214,47 @@ class MyGLWidget : public BL2GLWidget {
     int mortyFila;
     int mortyCol;
 
+    //Posicion de Fantasma
+    void findGhost();
+    int fantasmaFila;
+    int fantasmaCol;
+    int dirFantasma;
+    //Para que no se coma las monedas
+    int celdaDebajofantasma = 0;
+
     // Direccion de Morty
     float angleMorty = -90.0f;
-
-    int dirMorty = 1;
-
+    int dirMorty = 2;
     glm::vec3 direccioMiradaMorty() const;
 
+    //Cambios para minimapa
+    bool enMinimap = false;
 
-    
+    //LUZ
+    void updateLightPosition();
+
+    GLuint lightPosLoc;
+    GLuint lightColorLoc;
+    GLuint viewPosLoc;
+
+    glm::vec3 lightPos;
+    glm::vec3 lightColor;
+
+    float angleSol = 0.0f;
+
+    bool nightMode = false;
+
+    GLuint nightModeLoc;
+    GLuint flashlightPosLoc;
+    GLuint flashlightDirLoc;
+    GLuint ghostLightPosLoc;
+    GLuint ghostLightColorLoc;
+    GLuint coinLightPosLoc;
+    GLuint coinLightDirLoc;
+
+    //TEXTURAS
+    GLuint texUVLoc;
+    GLuint colorMapLoc;    
 };
 
 #endif

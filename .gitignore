@@ -1,0 +1,17 @@
+# --- Compilació (qmake / make) ---
+*.o
+moc_*
+ui_*.h
+qrc_*.cpp
+Makefile*
+.qmake.stash
+.qmake.cache
+Bloc2_Exemple
+build*/
+
+# --- Qt Creator ---
+*.pro.user*
+.qtc_clangd/
+
+# --- Models 3D (no inclosos al repositori, vegeu el README) ---
+Models3D/
